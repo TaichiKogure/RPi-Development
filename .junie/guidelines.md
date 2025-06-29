@@ -113,7 +113,7 @@ All software components and documentation include version numbers for proper tra
 ## Target Audience
 This project is designed with beginners in mind, with comprehensive documentation that explains not only how to use the system but also the underlying concepts and structure.
 
-## additionalaction_Ver.2.0
+## Additional action_Ver.2.0
 - センサーBME680単独バージョンもfilename_soloというプログラム集で作成してください。
 - 従来のプログラム集を参考にSoloVerはintallation_solo,p1_software_solo,P2P3_software_soloという単独ディレクトリを作りそこに保存すること。
 - 前回の作成途中でエラーが出たためそれを回避してすでにあるディレクトリの情報も解析すること。
@@ -121,7 +121,7 @@ This project is designed with beginners in mind, with comprehensive documentatio
 - またP1は再起動した際にアクセスポイントの起動、データ収集サービスの起動、Webインターフェイスの起動、接続モニターの起動など複数の作業が必要になるため、一回の実行ですべて立ち上げられる実行ファイルとその解析を日本語で作成してください。
 - 必要に応じてDocumentationもSolo用に新調してください。
 - 
-## additionalaction_Ver.2.1
+## Additional action_Ver.2.1
 - P1向けのadditionalaction_Ver2.0に基づき対応したP2,P3用のモデルを作成してください。
 - RaspPi5_APconnectionで用いるP1のIP設定は
 - ap_ip=192.168.0.1
@@ -130,16 +130,59 @@ ap_dhcp_range_start=192.168.0.50
 ap_dhcp_range_end=192.168.0.150
 とするためすべての関連プログラムの既存設定をこれに準じた形に修正してください。
 
-## additionalaction_Ver.2.2
+## Additional action_Ver.2.2
 P1においてpipを使ってRaspberryPiに直接Pythonモジュールをinstallすることは環境が破壊される可能性があるためすべての動作は下記の
 仮想環境化で実施する。 そのためinstall時及び実際に各機能を実行する際、及び自動起動する際には下記の仮想環境を実行する旨修正、またはマニュアルに追記すること。
 
-# Set up virtual environment
+- Set up virtual environment
 cd ~
 python3 -m venv envmonitor-venv
 source envmonitor-venv/bin/activate
 
-# Install required Python packages
+- Install required Python packages
 pip install flask flask-socketio pandas plotly
 
 またVer2以降の修正で追加で必要なinstall項目があればそれも追記すること
+
+## Additional action_Ver.2.3 
+Additional action_Ver.2.2に対応したラズパイPico2Wのパッケージを作成する。
+データ送信、エラーハンドリング、センサードライバは通常通りだが、Solo対応のP1に適合した形のプログラムとして修正する。
+作業と成果物はG:\RPi-Development\RaspPi5_APconnection\P2_software_soloに保管する。
+
+## Additional action_Ver.2.5
+- G:\RPi-Development\RaspPi5_APconnection\Pico2BME680singletest\BME680forP2_real.pyにあるBME680設定情報をP2software_soloに反映してエラーを解消する主な変更点は下記
+
+
+- 0 、センサーのアドレスの修正
+sensor = BME680Sensor(address=0x77)
+
+
+- 1 、ガス測定用のヒーターを有効にする設定
+ctrl_gas = self._read_byte(BME680_CTRL_GAS_ADDR)
+ctrl_gas |= 0x10  # heater enable bit を立てる
+self._write_byte(BME680_CTRL_GAS_ADDR, ctrl_gas)
+
+
+- ２、ヒーターの温度制御の改良
+heatr_res = int(3.4 + ((temp - 20) * 0.6 / 100) * 1000)
+heatr_res = min(max(0, heatr_res), 255)  # ★ 追加：0〜255に制限
+self._write_byte(0x5A, heatr_res)
+
+
+- 3、amb_temp未定義の対処
+仮の周囲温度（ambient temperature）を仕様
+amb_temp = 25  # 通常室温のデフォルト値
+var5 = var4 + (var3 * amb_temp)
+
+その他変更点があれば反映する。
+
+以上を踏まえた修正を実施し、G:\RPi-Development\RaspPi5_APconnection\P2_software_solo2に保管する。
+
+## Additional action_Ver.3.0
+G:\RPi-Development\RaspPi5_APconnection\Pico2BME680singletest\OK2bme680Pico
+に保存されたbme680.pyを参照したbme680_main.pyでP2のセンサーが確実に駆動できることを確認したため、このモジュールを基幹とした
+P2_software_solo3を作成する。(G:\RPi-Development\RaspPi5_APconnection\P2_software_solo3)
+センサドライバは上記bme680モジュールを用い、出力情報をdata_transmissionのmoduleで送信する構造とする。
+
+
+
