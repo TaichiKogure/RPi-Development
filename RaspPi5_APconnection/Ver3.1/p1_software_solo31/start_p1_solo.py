@@ -29,8 +29,8 @@ import signal
 import atexit
 
 # Path to virtual environment Python interpreter
-VENV_PYTHON = os.path.expanduser("~/envmonitor-venv/bin/python3")
-
+#VENV_PYTHON = os.path.expanduser("~/envmonitor-venv/bin/python3")
+VENV_PYTHON = "/home/pi/envmonitor-venv/bin/python3"
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -186,8 +186,17 @@ def signal_handler(sig, frame):
 def monitor_processes():
     """Monitor running processes and restart them if they crash."""
     while True:
+        status_message = "\n===== P1 Services Status =====\n"
+        all_services_ok = True
+
         for name, process in list(processes.items()):
-            if process.poll() is not None:  # Process has terminated
+            if process.poll() is None:  # Process is running
+                status = "✓ 正常稼働中"
+                status_message += f"{name}: {status} (PID: {process.pid})\n"
+            else:  # Process has terminated
+                status = "✗ 停止中"
+                status_message += f"{name}: {status} (終了コード: {process.returncode})\n"
+                all_services_ok = False
                 logger.warning(f"{name} has terminated unexpectedly (return code: {process.returncode}), restarting...")
 
                 # Restart the process based on its name
@@ -197,6 +206,17 @@ def monitor_processes():
                     start_web_interface(DEFAULT_CONFIG)
                 elif name == "connection_monitor":
                     start_connection_monitor(DEFAULT_CONFIG)
+
+        # Add overall status
+        if all_services_ok:
+            status_message += "\n全サービスが正常に稼働しています。\n"
+        else:
+            status_message += "\n一部のサービスに問題があります。再起動を試みています。\n"
+
+        status_message += "=============================\n"
+
+        # Print status to console
+        print(status_message)
 
         # Check every 10 seconds
         time.sleep(10)

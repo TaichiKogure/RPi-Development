@@ -162,7 +162,7 @@ sudo python3 start_p1_solo.py
 1. Raspberry Pi 5のIPアドレスが正しいことを確認します（デフォルトは192.168.0.1）
 2. Webインターフェースサービスが実行中であることを確認します：
    ```bash
-   ps aux | grep app_solo.py
+   ps aux | grep P1_app_solo.py
    ```
 3. ログを確認します：
    ```bash
@@ -172,7 +172,7 @@ sudo python3 start_p1_solo.py
 ### データが古い、または更新されない
 1. データ収集サービスが実行中であることを確認します：
    ```bash
-   ps aux | grep data_collector_solo.py
+   ps aux | grep P1_data_collector_solo.py
    ```
 2. ログを確認します：
    ```bash
@@ -228,7 +228,7 @@ sudo ~/envmonitor-venv/bin/python3 start_p1_solo.py
 ```bash
 cd /path/to/RaspPi5_APconnection/p1_software_solo/ap_setup
 source ~/envmonitor-venv/bin/activate
-sudo ~/envmonitor-venv/bin/python3 ap_setup_solo.py --configure
+sudo ~/envmonitor-venv/bin/python3 P1_ap_setup_solo.py --configure
 ```
 
 ### データ収集間隔の変更

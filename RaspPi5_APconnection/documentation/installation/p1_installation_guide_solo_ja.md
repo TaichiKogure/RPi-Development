@@ -82,7 +82,7 @@ P1をアクセスポイントとして設定します：
 ```bash
 cd p1_software_solo/ap_setup
 source ~/envmonitor-venv/bin/activate
-sudo ~/envmonitor-venv/bin/python3 ap_setup_solo.py --configure
+sudo ~/envmonitor-venv/bin/python3 P1_ap_setup_solo.py --configure
 ```
 
 設定が完了したら、Raspberry Pi 5を再起動します：
@@ -138,30 +138,30 @@ sudo ~/envmonitor-venv/bin/python3 start_p1_solo.py
 ```bash
 cd /path/to/RaspPi5_APconnection/p1_software_solo/ap_setup
 source ~/envmonitor-venv/bin/activate
-sudo ~/envmonitor-venv/bin/python3 ap_setup_solo.py --configure  # 初回設定
-sudo ~/envmonitor-venv/bin/python3 ap_setup_solo.py --enable     # 有効化
-sudo ~/envmonitor-venv/bin/python3 ap_setup_solo.py --status     # 状態確認
+sudo ~/envmonitor-venv/bin/python3 P1_ap_setup_solo.py --configure  # 初回設定
+sudo ~/envmonitor-venv/bin/python3 P1_ap_setup_solo.py --enable     # 有効化
+sudo ~/envmonitor-venv/bin/python3 P1_ap_setup_solo.py --status     # 状態確認
 ```
 
 ### データ収集サービス
 ```bash
 cd /path/to/RaspPi5_APconnection/p1_software_solo/data_collection
 source ~/envmonitor-venv/bin/activate
-sudo ~/envmonitor-venv/bin/python3 data_collector_solo.py
+sudo ~/envmonitor-venv/bin/python3 P1_data_collector_solo.py
 ```
 
 ### Webインターフェース
 ```bash
 cd /path/to/RaspPi5_APconnection/p1_software_solo/web_interface
 source ~/envmonitor-venv/bin/activate
-sudo ~/envmonitor-venv/bin/python3 app_solo.py
+sudo ~/envmonitor-venv/bin/python3 P1_app_solo.py
 ```
 
 ### 接続モニター
 ```bash
 cd /path/to/RaspPi5_APconnection/p1_software_solo/connection_monitor
 source ~/envmonitor-venv/bin/activate
-sudo ~/envmonitor-venv/bin/python3 wifi_monitor_solo.py
+sudo ~/envmonitor-venv/bin/python3 P1_wifi_monitor_solo.py
 ```
 
 ## アクセス方法
@@ -193,7 +193,7 @@ sudo cat /var/log/data_collector_solo.log
 ### Webインターフェースにアクセスできない場合
 サービスが実行中か確認します：
 ```bash
-ps aux | grep app_solo.py
+ps aux | grep P1_app_solo.py
 ```
 
 ログを確認します：

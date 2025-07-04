@@ -22,8 +22,10 @@ This project implements a standalone environmental data measurement system using
 
 ## Project Structure
 The project is organized within the RaspPi5_APconnection directory and includes:
+ただし必要に応じてこれらの構造は修正、増設される。
 
 ```
+(base design and structure.)
 RaspPi5_APconnection\
 ├── p1_software\              # Software for Raspberry Pi 5
 │   ├── ap_setup\             # Access point configuration
@@ -186,3 +188,114 @@ P2_software_solo3を作成する。(G:\RPi-Development\RaspPi5_APconnection\P2_s
 
 
 
+## Additional action_Ver.3.1
+G:\RPi-Development\RaspPi5_APconnection\Ver3.1を参照し
+全体のP1とP2の整合性やコネクション周りのエラーをすべて検出して修正してください。
+修正後のマニュアルも同一ディレクトリ内に日本語表記で作成すること。
+P1の一括起動プログラムstart_p1_solo.pyは便利だが起動している案件が正常であることをきちんとコマンドプロンプト上に表記するような機能を追加すること。
+またP2はラズパイPico2W想定だがネットワーク接続にエラーが頻発するため起動時に５秒以上のディレイを入れてセンサ、Wifi送信など各機能を立ち上げられるようにすること。
+LEDの点灯機能は データ送信時、Wifiエラー、センサエラー、両方エラーなど識別できるようプログラム間の整理を行うすること。
+Please refer to G:\RPi-Development\RaspPi5_APconnection\Ver3.1 and perform the following:
+Check and correct all inconsistencies and connection-related errors between P1 and P2 throughout the entire system.
+After making corrections, create a new Japanese-language manual and place it in the same directory.
+While start_p1_solo.py (the unified startup script for P1) is convenient, please enhance its functionality to clearly indicate on the command prompt whether each running process is operating correctly.
+P2 is intended to run on a Raspberry Pi Pico W, but network connection errors occur frequently. Therefore, add a delay of more than 5 seconds at startup to ensure that the sensor, Wi-Fi transmission, and other functions are initialized properly.
+For the LED indicator function, reorganize the program logic so that it can distinguish between different statuses such as:
+Data transmission,Wi-Fi error
+Sensor error,Combined errors (both Wi-Fi and sensor)
+Please implement the above.
+
+すべての作業は上記ディレクトリ内で実施する
+All tasks must be carried out within the above directory.
+
+## Additional action_Ver.3.2
+あなた:
+wifi_client_solo.py に送信リトライ機能	現状は送信1回失敗で終了だが
+最大5回まで自動再送してもよいように修正した完全版のプログラムを提供してください。
+
+またP2_watchdog_solo.py	reset_device()が machine.reset() で即時再起動	
+エラー時ログを確実に出力・保存できているか
+要確認、すなわちFlash書き込みタイミングと競合するriskに対して対策した修正を行う。
+また上記変更によって必要な修正をVer3.1のプログラム全体を俯瞰して実行する。
+完成品はすべてVer3.2のフォルダに保管する。必要な未修正ファイルも併せて設置する。
+
+## Additional action_Ver.3.5
+- Ver3.1とVer3.2のシステムをベースに新た二酸化炭素センサーをP2に増設する。
+- センサはMH-Z19Cでピンアサインは下記
+VCC（赤）	VBUS（5V、ピン40）
+GND（黒）	GND（ピン38）
+TX（緑）	GP9（ピン12）
+RX（青）	GP8（ピン11）
+- CO2取得のために起動直後は３０秒の保持を行い。その後測定を実施する。
+測定値はBME680dataとともにP1に送信される。
+P1ではdataを記録しつつWebアプリ上で可視化できるようにする。
+
+・P1のウェブアプリの注意点
+- 修正前の時点で気温、湿度、気圧、Gas抵抗がグラフ化されるがすべての縦軸が0から100という意味不明な値になっているため
+このレンジを任意で変更できるように修正すること、またCO2グラフも追加すること。
+- また常にLoadingGraphという読み込みサインが表示されたままになるため修正すること。
+- またWebアプリ上で接続しているP2の信号強度などの情報を随時表示するように改良すること。
+- すべての情報は下記に保管し、そのままコピーすることでP1,P2に即時使えるように改良する
+G:\RPi-Development\RaspPi5_APconnection\Ver3.5
+アップデートしたinstallマニュアルと操作説明書を日本語で追加すること。これもVer3.5フォルダ内に設置する。
+
+## Additional action_Ver.3.51
+P2_software_soloの修正。
+作業成果物はすべてP2_35_1ディレクトリに保存すること。
+
+G:\RPi-Development\RaspPi5_APconnection\Ver3.5\P2_35_1
+
+P2_software_solo35をThonny上で実行すると下記のエラーが生じる。
+
+MPY: soft reboot
+
+=== Raspberry Pi Pico 2W Environmental Monitor Ver3.5 ===
+Initializing...
+Initializing I2C for BME680...
+I2C devices found: ['0x77']
+Initializing BME680 sensor...
+Initializing MH-Z19C CO2 sensor...
+MH-Z19C initialized on UART1 (TX: GP8, RX: GP9)
+Warming up for 30 seconds...
+Initializing WiFi client...
+Initializing data transmitter...
+Initializing watchdog...
+Watchdog initialized with 8000ms timeout
+Initialization complete!
+Connecting to WiFi...
+Connecting to WiFi network: RaspberryPi5_AP_Solo
+You may need to press "Stop/Restart" or hard-reset your MicroPython device and try again.
+
+PROBLEM IN THONNY'S BACK-END: Exception while handling 'Run' (ConnectionError: EOF).
+See Thonny's backend.log for more info.
+
+Process ended with exit code 1.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Unable to connect to COM3: port not found
+
+Process ended with exit code 1.
+
+想定原因は下記だがこれ以外にも発生理由があるため柔軟に対応すること。
+①	Wi-Fi接続失敗によるmachine.reset()	main.py の client.connect() が失敗したら、5秒待って machine.reset() を呼んでいます
+②	Thonny上でのUSB切断と再接続	reset()によりUSBシリアルポートが物理的に一時切断 → Thonnyが通信不能になり「EOF」例外発生
+🟠 原因2：client.connect() に十分な時間を与えていなかった
+main.py では最大10秒しか待機しない設定になっており、タイミングによって接続失敗
+
+🟠 原因3：client.connect() が失敗したあとすぐ machine.reset() を実行していた
+これらに対する対策を行う。
+
+## Additional action_Ver.4.0
+- Ver3.51までの更新を踏まえてPico2Wの端末を増設する。
+- 新しい端末は名前はP3とする。
+- 基本的な機能と構成はP2と同等。
+- P1での受信システムをP2とP3の二系統から受信できるように改良
+- 併せてP1でのWeb閲覧機能を改良し、P2とP3のグラフを重ね書きできるようにする。
+- P2,P3から受信したdataはP1中のディレクトリRawData_P2とRawData_P3を構築しここにリアルタイムに上書きし続ける構造に修正
+- Webアプリ上のグラフはこのRawDataを読み込みPlotlyとして書き出すシステムとする。
+- ウェブ上のグラフはP2、P3を任意のチェックボックスなどで表示設定ON/OFF切り替えできる。
+- またP2,P3から得られた湿度と気温から絶対湿度を計算しそれもP2,P3のデータとしてグラフに出力する機能を追加する。絶対湿度の計算はP1上で行う。
+- すべての作業はG:\RPi-Development\RaspPi5_APconnection\Ver4.0に保存する。
+- main.pyなど不足分を修正
+- インストールマニュアル、および使用方法を日本語で記載したものを追加。
+- 

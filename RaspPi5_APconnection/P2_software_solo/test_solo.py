@@ -36,9 +36,9 @@ print("\nChecking required files...")
 required_files = [
     "main.py",
     "main_solo.py",
-    "data_transmission/wifi_client_solo.py",
+    "data_transmission/P2_wifi_client_solo.py",
     "sensor_drivers/bme680_driver_solo.py",
-    "error_handling/watchdog_solo.py"
+    "error_handling/P2_watchdog_solo.py"
 ]
 
 for file in required_files:
