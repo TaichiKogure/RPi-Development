@@ -298,4 +298,354 @@ main.py では最大10秒しか待機しない設定になっており、タイ�
 - すべての作業はG:\RPi-Development\RaspPi5_APconnection\Ver4.0に保存する。
 - main.pyなど不足分を修正
 - インストールマニュアル、および使用方法を日本語で記載したものを追加。
+
+## Additional action_Ver.4.1
+- 増設したP3のコネクションタイムアウト問題に対して対策をする。
+- 成果物は下記リンクに追加する。
+- G:\RPi-Development\RaspPi5_APconnection\Ver4.1
+- とくにP3のプログラム整合性、ファイル名称、P1との連携、P2とのID衝突が起こらないように調査分析改善してほしい。
+
+特にThonny上で試運転をする場合P2では見られない
+
+想定原因①：接続処理の途中でPico 2Wが自動リセットまたはハング
+machine.reset()が呼ばれていなくても、ウォッチドッグタイマ（WDT）や例外によりリセットされる可能性あり。
+
+main.pyでのエラー処理中の再起動箇所は以下で確認されていますmain：
+
+safe_reset(reason="WiFi connection failure")
+原因②：WiFi AP（RaspberryPi5）が見つからない、または応答しない
+AP名RaspberryPi5_AP_Soloに接続を試みていますが、失敗して5回リトライ後、Picoは再起動しますmain。
+
+その直後、ThonnyがCOMポートを失う（Unable to connect to COM3）＝Picoが自動リセットされた可能性大。
+
+原因③：ThonnyのREPLセッションがWiFi接続途中に切断
+ThonnyはUSBシリアルで接続しているため、USB接続が一時的に切れるとREPLセッションが落ちる。
+
+🛠 対策（推奨順）
+✅ ①【暫定対策】リセット処理を一時的に無効化
+main.pyの以下の行：
+
+safe_reset(reason="WiFi connection failure")
+を
+
+# safe_reset(reason="WiFi connection failure")
+のようにコメントアウトし、手動で確認できるようにします。
+
+✅ ② WiFiの接続処理に「例外ログだけ記録してリセットしない」設定を試す
+例外発生時のhandle_error(...)のあとにsleepだけしてループを継続するように変更する。
+
+# 元のコード
+handle_error(Exception("WiFi connection failed"), {"phase": "wifi_connection"})
+safe_reset(reason="WiFi connection failure")
+
+# 修正案（Thonnyで開発しやすくする）
+handle_error(Exception("WiFi connection failed"), {"phase": "wifi_connection"})
+print("開発中のため自動リセットを停止中。手動で再起動してください。")
+while True:
+    time.sleep(1)
+✅ ③ WiFi接続チェック関数にstatus()のログを追加
+connect_wifi()内に以下を追加：
+
+print("wlan.status() =", client.wlan.status())
+※WiFiの失敗原因を特定しやすくなります。
+
+- 変更履歴や操作方法の日本語マニュアルはVer4.1フォルダ内に作成すること。
+
+## Additional action_Ver.4.15 Debag
+成果物は下記に保管する
+G:\RPi-Development\RaspPi5_APconnection\Ver4.1\Ver4.15Debag
+
+- P3においてWifi接続確認、センサー接続確認、を検出しエラーがどこで発生しているか確認するためのプログラムを作成する。
+- 設定値はこれまでのP3と同じだが、より時間経過や接続に向けてどのプロセスが進行中か逐一Thonny上で確認できること。
+- Wifiについては、とくにリセットする、しない、タイムアウト時間設定などの複数パターンを実行して課題発生特定しやすく工夫すること。
+- 作業マニュアルは日本語で同一ディレクトリ内に保管する。
+
+- 現状のエラーは下記、実行すると ぴこんぽこんというUSB認識を無限に繰り返すループになってしまう。
+
+MPY: soft reboot
+Error log file initialized: /error_log_p3_solo.txt
+Starting in 10 seconds...
+10 seconds until start...
+5 seconds until start...
+3 seconds until start...
+2 seconds until start...
+1 seconds until start...
+
+=== Raspberry Pi Pico 2W Environmental Monitor Ver4.1 (P3) ===
+Initializing...
+Initializing I2C for BME680...
+I2C devices found: ['0x77']
+Initializing BME680 sensor...
+Initializing BME680 on I2C address 0x77
+BME680 found with correct chip ID
+BME680 calibration read successfully
+BME680 initialization complete
+Initializing MH-Z19C CO2 sensor...
+MH-Z19C initialized on UART1 (TX: GP8, RX: GP9)
+Warming up for 30 seconds...
+Initializing WiFi client...
+WiFi Client initialized for P3
+Server: 192.168.0.1:5000
+Initializing data transmitter...
+Added sensor: bme680
+Added sensor: mhz19c
+Initializing watchdog...
+Watchdog initialized with 8000ms timeout
+Initialization complete!
+Connecting to WiFi...
+SSID: RaspberryPi5_AP_Solo, Device ID: P3
+Maximum retries: 5, Connection timeout: 45 seconds
+Connection attempt 1/5...
+Connecting to WiFi network: RaspberryPi5_AP_Solo
+Connection timeout: 45 seconds
+Activating WiFi interface...
+Sending connection request to RaspberryPi5_AP_Solo...
+PROBLEM IN THONNY'S BACK-END: Exception while handling 'Run' (ConnectionError: EOF).
+You may need to press "Stop/Restart" or hard-reset your MicroPython device and try again.
+
+See Thonny's backend.log for more info.
+
+Process ended with exit code 1.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Unable to connect to COM3: port not found
+
+Process ended with exit code 1.
+
+## Additional action_Ver.4.16 Debag
+下記対応を実施する
+ 原因：バックグラウンド処理のブロック
+JustAnswer の例ですが、次のような原因が挙げられています：
+
+"continuous loop … wireless connection to the board drops" …
+"machine.idle() # This allows the board to manage WiFi during the loop" 
+github.com
++5
+justanswer.com
++5
+forums.raspberrypi.com
++5
+
+➡while True: を一切休ませずに回し続けると、Pico の MicroPython システムが Wi‑Fi の維持・USB シリアル応答の処理を行うタイミングがなくなり、結果として Thonny からの応答が途絶えてしまいます。
+
+対策：ループ内に処理のための“隙間”を入れる
+無限ループ内には、最低でも以下のどちらかを含めてください。
+
+① time.sleep() を使う
+while True:
+    # 本来の処理
+    ...
+    time.sleep(0.05)  # 50ms 程度でもOK
+② machine.idle() を使う（より Wi‑Fi処理に優しい）
+
+import machine, time
+
+while True:
+    # 本来の処理
+    ...
+    machine.idle()
+    time.sleep(0.01)
+これにより、CPU が余裕を持って Wi‑Fi チップや USB REPL の割込処理を実行できるようになります。
+
+効果検証の方法
+while True の中に print("loop!") を入れてループの継続を確認しつつ、
+
+上記の time.sleep() や machine.idle() を有効化前後で、
+
+Thonny 上に Starting main loop… のままになるか、進展するか 比較してみてください。
+
+補足 & 他の可能性
+ループ内で 大量のセンサ読み取りや UART ロギング、ネット通信 を実行している場合、それだけでも処理負荷になりやすいです。休止フレームは必須です。
+
+同様の現象は Pico W（MicroPython）の実案件でもよく起きるため、ループには必ず “処理休止” を入れる設計が安全です 
+reddit.com
++4
+justanswer.com
++4
+cebess.wordpress.com
++4
+。
+
+結論
+Starting main loop… のまま待ち状態になる場合の原因は、無限ループでシステム側の処理に割り込みが入れられず、Wi‑Fi や USB の応答がハングしているためです。
+time.sleep() や machine.idle() をループ内に挟むことで、MicroPythonの安定動作が期待できます。
+
+お手数ですが、一度お試し＆動作状況を確認してみてください 😊
+
+## Additional action_Ver.4.17 Debag
+修正しましたがまだStarting main loop... で停止してしまいます。下記の対策を実施して下さい
+Starting main loop… で止まったまま進まない原因として考えられるのは、MicroPython内部のWi‑FiやUSBの割り込み処理がメインループにより完全にブロックされてしまっている点です。
+
+🔍 背景と原因
+フォーラムでは、「無限ループだけ実行し続けると、デバイスが 'busy' 状態になって応答しなくなる」という声があります 
+github.com
++2
+stackoverflow.com
++2
+justanswer.com
++2
+。
+
+また、Wi‑FiファームウェアのロードやUSB初期化中にメインループが重くなると、特にAppleなどではUSBがハングしてThonnyが切断されるといった報告もあります 。
+
+JustAnswer上の相談者も「ループが動き続けると無線接続が切れる」「loop内にtime.sleepやidleが必要」とアドバイスされているそうです 
+reddit.com
++4
+justanswer.com
++4
+stackoverflow.com
++4
+。
+
+✅ 対策：ループ処理の変更
+① time.sleep() を挟む
+python
+コピーする
+編集する
+import time
+
+print("Starting main loop...")
+while True:
+    # センサ取得などの処理
+    …
+    time.sleep(0.05)  # 約50msの待ちを入れる
+② machine.idle() を併用（推奨）
+python
+コピーする
+編集する
+import machine, time
+
+print("Starting main loop...")
+while True:
+    # センサ取得などの処理
+    …
+    machine.idle()
+    time.sleep(0.01)  # idle + 小さな待ちで背景処理がしっかり動く
+この idle → sleep の併用 により、Wi‑FiとUSBの割り込み処理が安定し、Thonnyの「Starting main loop…」も進行しやすくなります。
+
+🧪 動作確認のステップ
+print("loop!") をループに入れて、処理が進んでいるか確認。
+
+machine.idle()を入れて改善するかをチェック。
+
+idle + sleep 組み合わせで安定しない場合は、sleep時間を調整（0.01〜0.1秒）。
+
+🎯 まとめ
+原因：ループが背景処理（Wi‑Fi／USB）を妨げ、Thonnyが応答に追いつけなくなる
+
+解決法：「idle＋sleep」で強制的に背景処理を実行させる
+
+## Additional action_Ver.4.18 Debag
+作業フォルダは下記
+G:\RPi-Development\RaspPi5_APconnection\Ver4.18Debac
+``` 
+Error initializing WiFi client: unexpected keyword argument 'debug_mode'
+```
+このエラーが出る主な理由は、**WiFiClientクラスのコンストラクタに という引数が渡されているが、その引数を受け取るようにWiFiClientの`__init__()`メソッドが定義されていない`debug_mode`ためです。
+#### **もしどうしてもが必要ならWiFiClientの`__init__`に追加`debug_mode`**
+（通常は上記の方法が推奨）
+どうしても必要なら、 のクラスで `wifi_client.py`
+``` python
+def __init__(self, ssid="...", ..., debug_mode=False):
+    self.debug_mode = debug_mode
+    # その他初期化処理
+```
+のように追加する。
+
+
+## Additional action_Ver.4.19 Debag
+下記の原因に対して対策したプログラムを作成し日本語による作業マニュアルも併せて作成する。
+特に応急処置の部分の項目を詳細に説明する日本語マニュアルとする。
+フォルダはVer4.19Debagディレクトリを作成してそこに保存する。
+
+
+- 状況main.py は起動後、connect_wifi() を実行。
+client.connect() にて wlan.connect(...) 呼び出し後に USB接続が強制切断され、Thonnyが COMポートを失う。
+これは Thonny の表示が "PROBLEM IN THONNY'S BACK-END: ConnectionError: EOF" や "Unable to connect to COM3: port not found" を示していることからも明確。
+
+ 根本原因
+ 原因1：wlan.connect()中のタイムアウト時の 例外未処理
+コード上では以下のブロックで wlan.connect() を使い、接続を待機します：
+
+self.wlan.connect(self.ssid, self.password)
+ただし、一定時間で接続が成立しないと、ESP32ベースのWi-Fiモジュールが内部リセットを起こす ことがあり、その際に Pico W の USB-UART インタフェースも巻き添えで再初期化され、COMポートが消滅します（これは known bug として複数報告があります）。
+
+✅ 原因2：Thonny側が USB切断に過敏
+Thonny は Pico W において：
+
+USB経由で REPL（シリアル）通信を維持している
+
+その通信が Wi-Fi 接続中の 例外 or ハングにより切断 されると、COMポート消滅と認識し、"EOF" エラー → 実行中断 → ポート消滅 → 再接続ループ になる
+
+✅ 推奨される対策
+対策1：Wi-Fi接続はスレッド化 or try/except で安全に包む
+WiFiClient.connect() の中で以下のように 例外全体をtryブロックで囲うことで、MicroPython側がリセットしないよう保護します。
+
+
+try:
+    self.wlan.connect(self.ssid, self.password)
+except Exception as e:
+    self._debug_print(f"Exception during wlan.connect(): {e}", DEBUG_BASIC)
+    return False
+また、特に self.wlan.scan() の部分は稀にハングを引き起こすため、ここも try/except で安全化すべきです。
+
+対策2：Wi-Fi 接続確認後に print() をしない
+Thonny がシリアルに依存している関係で、Wi-Fi接続直後に大量の print() が入ると USB/REPL が落ちやすい という報告もあります。
+したがって、以下のような部分をコメントアウトかログ抑制します：
+
+
+# print("Connected to SSID:", self.ssid)   # コメントアウトか抑制
+# print(f"IP address: {ip}")               # 同様
+必要に応じてログをファイルに保存する設計に切り替えるのが安全です。
+
+対策3：最初は WiFiClient.run_network_diagnostics() のみを使い接続は試みない
+P2で安定しているなら、P3の個体が電源供給の面やWi-Fiモジュールの不安定性を持っている可能性も高いです。
+
+✅ 応急処置として試すべきこと（段階的）
+client.run_network_diagnostics() のみに変更して main loop を切る
+connect() を呼び出す箇所をコメントアウトし、main loop が正常に動くかを確認
+それでも落ちる場合 → wlan.connect() 前後に print() を削除
+client.connect() の self.wlan.connect() を try/except で囲み、ThonnyとのCOM通信を守る
+上記後も USBが落ちる → machine.freq(125_000_000) などで処理負荷を軽減して再試行
+🔚 結論
+この問題は「Wi-Fi接続処理中にMicroPythonが内部でUSB通信を阻害 → Thonnyから見てポート消失」という Pico W + Thonny 特有の構造的問題が引き起こしており、プログラム構造とログ出力の見直しで回避可能です。
+
+
+## Additional action_Ver.4.19 Debag
+下記の原因に対して対策したプログラムを作成し日本語による作業マニュアルも併せて作成する。
+特に応急処置の部分の項目を詳細に説明する日本語マニュアルとする。
+フォルダはVer4.19Debagディレクトリを作成してそこに保存する。
+wifi_client_debugにおいて
+
+input("Press 'y' to continue or any other key to exit...")
+
+この行が run_network_diagnostics() や main.py 側で使われていると、Thonny REPLやUSBでは入力待ちになるが、実際には入力できない＝ハングして見える状態になります。
+
+以下のような制御を追加する。
+
+if self.debug_mode and self.debug_level >= DEBUG_BASIC:
+    print("\nDiagnostics Summary:")
+    print(f"WiFi Active: {self.wlan.active()}")
+    print(f"Target Network Found: {results.get('target_network_found', False)}")
+    print(f"Signal Strength: {results.get('target_network_strength', 'N/A')} dBm")
+    proceed = True  # ← debugオプションで変えられるようにする
+    if not proceed:
+        print("Connection attempt skipped. Continuing without WiFi connection.")
+        return False
+その他の修正指示
+1, input() の使用を削除／自動判断に切り替え（REPLで入力は不可）
+2, wlan.scan() の直前に time.sleep(1) を入れると安定性が上がる可能性あり
+3, run_network_diagnostics() は表示のみにし、WiFi接続制御は別の設定フラグで管理
+
+成果物はG:\RPi-Development\RaspPi5_APconnection\Ver4.19Debagに保管する
+
+## Additional action_Ver.4.20 Debag
+- 下記の原因に対して対策したプログラムを作成し日本語による作業マニュアルも併せて作成する。
+- 特に応急処置の部分の項目を詳細に説明する日本語マニュアルとする。
+- フォルダはVer4.20Debagディレクトリを作成してそこに保存する。
+- CO2センサもきちんと駆動させてデータを取得するよう修正する。
+- BME680のI2Cアドレスミス
+→ ドライバーの初期化時に間違ったアドレス（たとえば0x77と0x76の取り違え）があると、
+センサ実装有無に関わらず「値は返る」が「デタラメな値」になることがあります。これを両方検証して正確な値を出力できるよう修正
+- Ver4.0のP1のデータ収集形式に会うように修正。
 - 
