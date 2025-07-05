@@ -649,3 +649,48 @@ if self.debug_mode and self.debug_level >= DEBUG_BASIC:
 センサ実装有無に関わらず「値は返る」が「デタラメな値」になることがあります。これを両方検証して正確な値を出力できるよう修正
 - Ver4.0のP1のデータ収集形式に会うように修正。
 - 
+## Additional action_Ver.4.25Debag
+- 下記の原因に対して対策したプログラムを作成し日本語による作業マニュアルも併せて作成する。
+- 特に応急処置の部分の項目を詳細に説明する日本語マニュアルとする。
+- P2についてもP3のでバックプログラムをベースに修正する。
+- G:\RPi-Development\RaspPi5_APconnection\Ver4.25Debag\P2_software_debugに保管してあるデータはP3のコピーであるため、これをP2に適合するようファイル名、プログラム内のP3参照をP2に変更し、正しくP1へ送信できるように修正する。
+- test_simulation.pyを用いた場合すべてのセンサの値は正確な値が出力されるが、main.pyを実行するとマイナス値など意味不明な値がでるためtest_simlation.pyで得られているデータ出力構造をmain.pyおよび関連するプログラムに適応する。この適応はP2,P3両方に実施しVer4.25ディレクトリ内に完全な形で保管する。
+- 
+## Additional action_Ver.4.25.1Debag
+- P2およびP3のbme680センサの値はG:\RPi-Development\OK2bmeに保管されているアルゴリズムを忠実に用いるよう修正。
+- 
+
+## Additional action_Ver.4.25.5 Debag
+下記フォルダですべての作業を実施すること、現時点で保管されているデータのはVer 4.251である。
+G:\RPi-Development\RaspPi5_APconnection\Ver4.25.5Debag
+- P1データ収集と描画システム
+
+timestamp列が文字列のままで datetime に変換されていない
+→ グラフ描画時、x=df['timestamp'] で plotly に渡すと、時間軸が正しくプロットされない／全く同一になる場合がありえます。
+df['timestamp'] = pd.to_datetime(df['timestamp'])
+が実施されていないか、無効になっている可能性があるので確認修正実施。
+
+- P2 も P3 も すべて同じグラフになる現象は df_p2 と df_p3 が両方 None もしくはキャッシュされた同一データを返している疑い
+create_dashboard_graphs() → create_time_series_graph() → get_historical_data() にて、キャッシュ（self.data_cache）を使っています。
+
+これにより、誤って P2 と P3 のキャッシュが共有されてしまった場合、両方のグラフが同じ形になる可能性があるため調査・対策する。
+
+- 原因候補と内容と対応
+🟡 timestampがdatetime型でない	df['timestamp'] = pd.to_datetime(df['timestamp']) を追加または強制変換
+🟠 キャッシュが共有または上書きされている	self.data_cacheが誤って共通化されているか、キーの使い方ミスを確認
+🔴 読み込み失敗で空DataFrame	parameter in df.columns が False のとき y=[] になり全グラフ同じになる
+
+- Connection Status が一切表示されないため、P2、P3に対する無線強度の情報やnoiseといった情報を収集するようP1,P2,P3の必要部位を修正する。
+
+
+## Additional action_Ver.4.3 Debag
+- Webアプリ上のグラフの原因はほぼ確実に timestamp 列の扱いが datetime 型になっていないことでグラフの情報が正しく認識されていないので修正
+アップロードいただいた P1_app_solo.py を確認したところ、create_time_series_graph() の中では get_historical_data() 側で 
+timestamp を変換していますが、それがキャッシュされた後に別のグラフで誤って使い回される際に不整合が起きているようです。
+get_historical_data() 側のキャッシュは壊れていないが、df.copy() してもその中身が壊れていたら timestamp のまま str 型になる。
+そのため、グラフ描画時にも再変換が必要。
+- またP1中の
+/var/lib/raspap_solo/data/RawData_P2 
+/var/lib/raspap_solo/data/RawData_P3
+にデータがストレージされているためこのデータを読み込み＋10秒おきに更新し、Webアプリ立ち上げ時点で過去のデータ踏まえたグラフが描画されるように修正しなさい。
+- 修正点は日本語のマニュアルに提示すること。
