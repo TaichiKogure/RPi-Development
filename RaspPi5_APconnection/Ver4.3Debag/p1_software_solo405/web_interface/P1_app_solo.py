@@ -62,7 +62,7 @@ DEFAULT_CONFIG = {
     "rawdata_p3_dir": "RawData_P3",
     "api_url": "http://localhost:5001",
     "monitor_api_url": "http://localhost:5002",
-    "refresh_interval": 30,  # seconds
+    "refresh_interval": 10,  # seconds
     "graph_points": 100,  # number of data points to show in graphs
     "debug_mode": False
 }
@@ -132,6 +132,10 @@ class DataVisualizer:
 
     def get_historical_data(self, device_id, days=1):
         """Get historical data for the specified device."""
+        import pandas as pd
+        import datetime
+        import os
+
         if device_id not in ["P2", "P3"]:
             return None
 
@@ -144,59 +148,50 @@ class DataVisualizer:
                 logger.info(f"Using cached data for {device_id}, {len(df)} rows")
                 return df.copy()  # Return a copy to prevent modifications to the cached data
 
-        try:
-            # Calculate date range
-            end_date = datetime.datetime.now()
-            start_date = end_date - datetime.timedelta(days=days)
-
-            # Get list of CSV files in date range
-            data_frames = []
-            current_date = start_date
-
-            # Determine the appropriate directory for the device
-            device_dir = self.config["rawdata_p2_dir"] if device_id == "P2" else self.config["rawdata_p3_dir"]
-
-            while current_date <= end_date:
-                date_str = current_date.strftime("%Y-%m-%d")
-                csv_path = os.path.join(self.config["data_dir"], device_dir, f"{device_id}_{date_str}.csv")
-
-                if os.path.exists(csv_path):
-                    try:
-                        df = pd.read_csv(csv_path)
-                        data_frames.append(df)
-                    except Exception as e:
-                        logger.error(f"Error reading CSV {csv_path}: {e}")
-
-                current_date += datetime.timedelta(days=1)
-
-            # Combine all data frames
-            if data_frames:
-                combined_df = pd.concat(data_frames, ignore_index=True)
-
-                # Convert timestamp to datetime - force conversion to ensure it's in datetime format
-                combined_df['timestamp'] = pd.to_datetime(combined_df['timestamp'], errors='coerce')
-
-                # Drop rows with invalid timestamps
-                combined_df = combined_df.dropna(subset=['timestamp'])
-
-                # Sort by timestamp
-                combined_df = combined_df.sort_values('timestamp')
-
-                # Limit to the last N points for performance
-                if len(combined_df) > self.config["graph_points"]:
-                    combined_df = combined_df.tail(self.config["graph_points"])
-
-                # Cache the result
-                logger.info(f"Caching data for {device_id}, {len(combined_df)} rows")
-                self.data_cache[device_id] = (datetime.datetime.now(), combined_df.copy())
-
-                return combined_df.copy()
-            else:
-                logger.warning(f"No data found for {device_id} in the specified date range")
-                return None
-        except Exception as e:
-            logger.error(f"Error getting historical data for {device_id}: {e}")
+        # Explicitly specify the data directories
+        if device_id == "P2":
+            full_dir = "/var/lib/raspap_solo/data/RawData_P2"
+        else:  # P3
+            full_dir = "/var/lib/raspap_solo/data/RawData_P3"
+        if not os.path.exists(full_dir):
+            logger.warning(f"Directory not found: {full_dir}")
             return None
+
+        end_date = datetime.datetime.now().date()
+        date_list = [(end_date - datetime.timedelta(days=i)).strftime("%Y-%m-%d") for i in range(days)]
+
+        frames = []
+        for date_str in date_list:
+            file_path = os.path.join(full_dir, f"{device_id}_{date_str}.csv")
+            if os.path.exists(file_path):
+                try:
+                    df = pd.read_csv(file_path)
+                    # Check timestamp data type and convert appropriately
+                    if df['timestamp'].dtype == 'int64' or df['timestamp'].dtype == 'float64':
+                        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s', errors='coerce')
+                    else:
+                        df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+                    df = df.dropna(subset=['timestamp'])
+                    frames.append(df)
+                except Exception as e:
+                    logger.error(f"Failed to read CSV {file_path}: {e}")
+
+        if not frames:
+            logger.warning(f"No data found for {device_id} in the specified date range")
+            return None
+
+        df_all = pd.concat(frames, ignore_index=True)
+        df_all.sort_values(by='timestamp', inplace=True)
+
+        # Limit to the last N points for performance
+        if len(df_all) > self.config["graph_points"]:
+            df_all = df_all.tail(self.config["graph_points"])
+
+        # Cache the result
+        logger.info(f"Caching data for {device_id}, {len(df_all)} rows")
+        self.data_cache[device_id] = (datetime.datetime.now(), df_all.copy())
+
+        return df_all.copy()
 
     def create_time_series_graph(self, parameter, days=1, show_p2=True, show_p3=True):
         """Create a time series graph for the specified parameter with data from both P2 and P3."""
@@ -205,6 +200,23 @@ class DataVisualizer:
         # Get data for both devices
         df_p2 = self.get_historical_data("P2", days) if show_p2 else None
         df_p3 = self.get_historical_data("P3", days) if show_p3 else None
+
+        # Ensure timestamps are properly converted to datetime
+        if df_p2 is not None and not df_p2.empty and 'timestamp' in df_p2.columns:
+            # Check timestamp data type and convert appropriately
+            if df_p2['timestamp'].dtype == 'int64' or df_p2['timestamp'].dtype == 'float64':
+                df_p2['timestamp'] = pd.to_datetime(df_p2['timestamp'], unit='s', errors='coerce')
+            else:
+                df_p2['timestamp'] = pd.to_datetime(df_p2['timestamp'], errors='coerce')
+            df_p2 = df_p2.dropna(subset=['timestamp'])
+
+        if df_p3 is not None and not df_p3.empty and 'timestamp' in df_p3.columns:
+            # Check timestamp data type and convert appropriately
+            if df_p3['timestamp'].dtype == 'int64' or df_p3['timestamp'].dtype == 'float64':
+                df_p3['timestamp'] = pd.to_datetime(df_p3['timestamp'], unit='s', errors='coerce')
+            else:
+                df_p3['timestamp'] = pd.to_datetime(df_p3['timestamp'], errors='coerce')
+            df_p3 = df_p3.dropna(subset=['timestamp'])
 
         # Log data availability
         logger.info(f"P2 data: {df_p2 is not None and not df_p2.empty}, P3 data: {df_p3 is not None and not df_p3.empty}")
@@ -218,33 +230,82 @@ class DataVisualizer:
             # Create a new figure
             fig = go.Figure()
 
-            # Add P2 data if available and requested
+            # Check for valid data points (at least 2 unique non-NaN values)
+            p2_valid = False
+            p3_valid = False
+            y_min = None
+            y_max = None
+
+            # Validate P2 data
             if show_p2 and df_p2 is not None and not df_p2.empty and parameter in df_p2.columns:
-                logger.info(f"Adding P2 data for {parameter}, {len(df_p2)} rows, timestamp type: {type(df_p2['timestamp'].iloc[0])}")
-                fig.add_trace(go.Scatter(
-                    x=df_p2['timestamp'],
-                    y=df_p2[parameter],
-                    mode='lines',
-                    name=f'P2 {parameter.capitalize()}',
-                    line=dict(color='blue')
-                ))
+                # Check for at least 2 unique non-NaN values
+                p2_unique = df_p2[parameter].dropna().unique()
+                if len(p2_unique) >= 2:
+                    p2_valid = True
+                    # Update min/max for Y-axis scaling
+                    p2_min = df_p2[parameter].min()
+                    p2_max = df_p2[parameter].max()
+                    y_min = p2_min if y_min is None else min(y_min, p2_min)
+                    y_max = p2_max if y_max is None else max(y_max, p2_max)
+
+                    logger.info(f"Adding P2 data for {parameter}, {len(df_p2)} rows, unique values: {len(p2_unique)}")
+                    fig.add_trace(go.Scatter(
+                        x=df_p2['timestamp'],
+                        y=df_p2[parameter],
+                        mode='lines',
+                        name=f'P2 {parameter.capitalize()}',
+                        line=dict(color='blue')
+                    ))
+                else:
+                    logger.warning(f"P2 data for {parameter} has fewer than 2 unique values: {p2_unique}")
             else:
                 logger.warning(f"Not adding P2 data for {parameter}: show_p2={show_p2}, df_p2 exists={df_p2 is not None}, df_p2 not empty={not df_p2.empty if df_p2 is not None else False}, parameter in columns={parameter in df_p2.columns if df_p2 is not None else False}")
 
-            # Add P3 data if available and requested
+            # Validate P3 data
             if show_p3 and df_p3 is not None and not df_p3.empty and parameter in df_p3.columns:
-                logger.info(f"Adding P3 data for {parameter}, {len(df_p3)} rows, timestamp type: {type(df_p3['timestamp'].iloc[0])}")
-                fig.add_trace(go.Scatter(
-                    x=df_p3['timestamp'],
-                    y=df_p3[parameter],
-                    mode='lines',
-                    name=f'P3 {parameter.capitalize()}',
-                    line=dict(color='red')
-                ))
+                # Check for at least 2 unique non-NaN values
+                p3_unique = df_p3[parameter].dropna().unique()
+                if len(p3_unique) >= 2:
+                    p3_valid = True
+                    # Update min/max for Y-axis scaling
+                    p3_min = df_p3[parameter].min()
+                    p3_max = df_p3[parameter].max()
+                    y_min = p3_min if y_min is None else min(y_min, p3_min)
+                    y_max = p3_max if y_max is None else max(y_max, p3_max)
+
+                    logger.info(f"Adding P3 data for {parameter}, {len(df_p3)} rows, unique values: {len(p3_unique)}")
+                    fig.add_trace(go.Scatter(
+                        x=df_p3['timestamp'],
+                        y=df_p3[parameter],
+                        mode='lines',
+                        name=f'P3 {parameter.capitalize()}',
+                        line=dict(color='red')
+                    ))
+                else:
+                    logger.warning(f"P3 data for {parameter} has fewer than 2 unique values: {p3_unique}")
             else:
                 logger.warning(f"Not adding P3 data for {parameter}: show_p3={show_p3}, df_p3 exists={df_p3 is not None}, df_p3 not empty={not df_p3.empty if df_p3 is not None else False}, parameter in columns={parameter in df_p3.columns if df_p3 is not None else False}")
 
+            # If neither dataset is valid, return None
+            if not p2_valid and not p3_valid:
+                logger.warning(f"No valid data available for {parameter} graph (need at least 2 unique values)")
+                return None
+
             # Set title and labels
+            yaxis_config = {}
+
+            # Set Y-axis range if we have valid min/max values
+            if y_min is not None and y_max is not None:
+                # Add a small padding (5%) to make the graph look better
+                y_range = y_max - y_min
+                padding = y_range * 0.05 if y_range > 0 else 1
+                yaxis_config['range'] = [y_min - padding, y_max + padding]
+                logger.info(f"Setting Y-axis range for {parameter}: {yaxis_config['range']}")
+            else:
+                # Fallback to auto-range
+                yaxis_config['autorange'] = True
+                yaxis_config['rangemode'] = 'normal'
+
             fig.update_layout(
                 title=f"{parameter.capitalize()} over time",
                 xaxis_title="Time",
@@ -253,10 +314,7 @@ class DataVisualizer:
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode='closest',
-                yaxis=dict(
-                    autorange=True,  # Enable auto-ranging
-                    rangemode='normal'  # Normal range mode (not tozero)
-                ),
+                yaxis=yaxis_config,
                 legend=dict(
                     orientation="h",
                     yanchor="bottom",
@@ -1466,10 +1524,11 @@ def create_templates():
         updateConnectionStatus();
         loadGraphs();
 
-        // Set up auto-refresh for current readings and connection status
+        // Set up auto-refresh for current readings, connection status, and graphs
         setInterval(function() {
             updateCurrentReadings();
             updateConnectionStatus();
+            loadGraphs();
         }, {{ refresh_interval * 1000 }});
     });
 </script>

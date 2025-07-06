@@ -694,3 +694,719 @@ get_historical_data() 側のキャッシュは壊れていないが、df.copy() 
 /var/lib/raspap_solo/data/RawData_P3
 にデータがストレージされているためこのデータを読み込み＋10秒おきに更新し、Webアプリ立ち上げ時点で過去のデータ踏まえたグラフが描画されるように修正しなさい。
 - 修正点は日本語のマニュアルに提示すること。
+- G:\RPi-Development\RaspPi5_APconnection\Ver4.3Debagに成果物は保管すること。
+
+## Additional action_Ver.4.3 Debag 2
+Connection Statusを取得するためにP1側でP2とP3：IPアドレスの動的追跡（動的ARP登録）
+センサーデータ受信時（P1_data_collector_solo.py の _handle_client()）で送信元IPを記録
+addr[0] から取得可能。
+
+データに device_id: "P2" などが含まれているので対応付けが可能。
+
+IPアドレスをWiFiモニター構成に即時反映
+
+self.config["devices"]["P2"]["ip"] = sender_ip のように更新。
+
+同時に ["mac"] = None にして再解決させる。
+以下を
+def update_device_ip(self, device_id, new_ip):
+    if device_id not in self.config['devices']:
+        logger.warning(f"Unknown device ID {device_id} - cannot update IP")
+        return
+    old_ip = self.config['devices'][device_id]['ip']
+    if old_ip != new_ip:
+        logger.info(f"Updating {device_id} IP: {old_ip} -> {new_ip}")
+        self.config['devices'][device_id]['ip'] = new_ip
+        self.config['devices'][device_id]['mac'] = None  # force MAC re-resolution
+これをWiFiMonitor クラスに追加し、P1_data_collector_solo.py の _handle_client() 内で：
+self.update_device_ip(json_data['device_id'], addr[0])
+を呼び出すなどの対策を実施する。
+
+## Additional action_Ver.4.3 Debag 3
+P1_app_solo.py に以下のプログラムを導入する
+```python
+def get_historical_data(self, device_id, days):
+    import pandas as pd
+    import datetime
+    import os
+
+    if device_id not in ["P2", "P3"]:
+        return None
+
+    device_dir = self.config["rawdata_p2_dir"] if device_id == "P2" else self.config["rawdata_p3_dir"]
+    full_dir = os.path.join(self.config["data_dir"], device_dir)
+    if not os.path.exists(full_dir):
+        return None
+
+    end_date = datetime.datetime.now().date()
+    date_list = [(end_date - datetime.timedelta(days=i)).strftime("%Y-%m-%d") for i in range(days)]
+
+    frames = []
+    for date_str in date_list:
+        file_path = os.path.join(full_dir, f"{device_id}_{date_str}.csv")
+        if os.path.exists(file_path):
+            try:
+                df = pd.read_csv(file_path)
+                df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+                df = df.dropna(subset=['timestamp'])
+                frames.append(df)
+            except Exception as e:
+                logger.error(f"Failed to read CSV {file_path}: {e}")
+
+    if not frames:
+        return None
+
+    df_all = pd.concat(frames, ignore_index=True)
+    df_all.sort_values(by='timestamp', inplace=True)
+    return df_all
+```
+self.config["data_dir"] などは start_p1_solo.py 経由で指定されているため、すでに /var/lib/raspap_solo/data を使っている構成にそのまま適合します。
+
+上記関数を create_time_series_graph() から呼び出している self.get_historical_data(...) の実体に置き換えれば、過去のCSVデータ（たとえば前日のログ）も反映されます。
+
+## Additional action_Ver.4.3 Debag 4
+P1_app_solo.py histrical_dataの保管場所はP1の内部の
+/var/lib/raspap_solo/data/RawData_P2
+/var/lib/raspap_solo/data/RawData_P3
+であるためこれを明示的に指定して参照するように修正
+
+## Additional action_Ver.4.3 Debag 5
+【1】 timestamp の正確な変換（秒形式 → ISO形式）
+CSVの timestamp 列が「Unix秒」形式で保存されている場合、pd.to_datetime(..., unit='s') を指定しないと正しく変換されません。
+
+
+【2】 get_historical_data() の修正（キャッシュも制限）
+すでに修正済ドキュメント【Fix Historical Graph / ID: 686910d8a2588191ad27b9282a2571dc】に
+以下のように書き換えています：
+
+```python
+df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s', errors='coerce')
+```
+
+P1_app_solo.py 内の get_historical_data() 関数を、
+→ Fix Historical Graph に完全に置き換える（上記のように unit='s' 指定がポイント）
+
+## Additional action_Ver.4.3 Debag 6
+以下のようにタイムスタンプは文字列、数値どちらのCSVでも対応可能にする。。
+```python
+if df['timestamp'].dtype == 'int64' or df['timestamp'].dtype == 'float64':
+    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s', errors='coerce')
+else:
+    df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+```
+Y軸が 0–100 に固定されてしまい各パラメータに準じたスケールに変わらない問題を解決してほしい。
+y=parameter の値が すべて NaN または一定値扱い になっており、Plotlyが自動で0–100を採用している可能性がある。
+
+```python
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objs as go
+
+def plot_device_data(csv_path, parameter='氣温'):  # '氣温'例
+    # CSV読込＋欠損行除去
+    df = pd.read_csv(csv_path, sep='\t', header=None,
+                     names=['timestamp', 'device', '氣温', '湿度', '気圧', 'gas', 'adc', 'batt'])
+    
+    # タイムスタンプ列の変換（失敗したらNaT: 欠損行と等価に扱う）
+    df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+    # 欠損値除去（timestampまたはparameter名列がNaN/NaT）
+    df = df.dropna(subset=['timestamp', parameter])
+    
+    # Y軸範囲指定なし（自動）
+    # パラメータ列が全て同じ値/全NaNなら描画せず警告
+    y_unique = df[parameter].dropna().unique()
+    if len(y_unique) < 2:
+        print(f"{parameter} の有効データ点が1点以下です。グラフは描画されません")
+        return None
+    
+    # プロット
+    fig = px.line(df, x='timestamp', y=parameter, title=f"{parameter} 推移")
+    # fig.update_yaxes(range=[min, max]) ← 必要なら明示指定も可
+    fig.show()
+    return fig
+```
+- の Plotly生成ロジック、おそらく `DataVisualizer.get_historical_data` または `get_graphs` 内で
+上記のようなデータ読み込み・前処理・NaN除去・日付変換処理を必ず実施してください。 **P1_app_solo.py**
+    - 日付変換忘れ（`pd.to_datetime`無し）がトレースの多くの原因です。
+    - 欠損は `dropna(subset=[...])` で除外（パラメータ名はCSVヘッダーと照合）
+
+- **CSV形式**
+区切り文字はファイル例より `\t`（タブ区切り）が濃厚です。
+必要なら `sep='\t'` を明示してください。
+```python
+- df = pd.read_csv(csv_path, sep='\t', header=None, 
+  names=["timestamp", "device", "氣温", "湿度", "気圧", "gas", "adc", "batt"])
+```
+![img.png](img.png)
+## Additional action_Ver.4.31 Debag 1
+現在グラフが描画されない.想定原因は下記
+
+【1】グラフ用データはあるが fig.data にトレースが追加されていない
+create_time_series_graph() の try ブロック内で df_p2[parameter] もしくは df_p3[parameter] が全て NaN または 空配列 の場合、
+グラフオブジェクトは作られても描画対象がなく Error loading graphs になります。
+
+```python
+if not fig.data:
+    logger.warning(f"No valid data to plot for {parameter}")
+    return json.dumps({"error": f"No valid data to plot for {parameter}"})
+```
+と追記してエラーを明示化する
+例外ブロックもこのように：
+```python
+except Exception as e:
+    logger.error(f"Error creating graph for {parameter}: {e}")
+    return json.dumps({"error": f"Graph creation failed: {e}"})
+```
+関連する部分を修正せよ
+作業はすべて下記の部分で行うこと。
+G:\RPi-Development\RaspPi5_APconnection\Ver4.31Debag
+
+## Additional action_Ver.4.31 Debag 2
+【結論】データは正常 → 参照側またはUIの描画ロジックに原因あり
+① グラフのスケールやプロットが毎回「0スタート」になるのを防ぐには：
+Y軸の範囲指定を動的に設定していても、fig.add_trace(...) が実際に値を受け取れていない可能性。
+
+logger.info(...) にて df['timestamp'].min() と df[parameter].min() をすでに出力済みなら、それを UI 上でも表示できるような表示領域（小ログ）に追加すると原因調査がしやすくなります。
+
+② 次のログ拡張例（関数内に挿入）
+```python
+logger.info(f"P2[{parameter}] from {df_p2['timestamp'].min()} to {df_p2['timestamp'].max()} range: {df_p2[parameter].min()} – {df_p2[parameter].max()}")
+logger.info(f"P3[{parameter}] from {df_p3['timestamp'].min()} to {df_p3['timestamp'].max()} range: {df_p3[parameter].min()} – {df_p3[parameter].max()}")
+```
+③ Webアプリで過去の1日分データをグラフ上で正しく引き出すには：
+self.get_historical_data(...) で キャッシュ無効化または再読込フラグの追加が必要。
+
+UI 側の日数選択 "1 Day" → "7 Day" → "1 Day" のように一度切り替えてみると キャッシュが再読み込みされる可能性があります。
+
+下記内容修正を参考にすること。
+```python
+def create_time_series_graph(self, parameter, days=1, show_p2=True, show_p3=True):
+    logger.info(f"Creating time series graph for {parameter}, days={days}, show_p2={show_p2}, show_p3={show_p3}")
+
+    df_p2 = self.get_historical_data("P2", days) if show_p2 else None
+    df_p3 = self.get_historical_data("P3", days) if show_p3 else None
+
+    if (df_p2 is None or df_p2.empty) and (df_p3 is None or df_p3.empty):
+        logger.warning(f"No data available for {parameter}")
+        return None
+
+    try:
+        fig = go.Figure()
+
+        if show_p2 and df_p2 is not None and not df_p2.empty and parameter in df_p2.columns:
+            df_p2 = df_p2.copy()
+            if df_p2['timestamp'].dtype == 'int64' or df_p2['timestamp'].dtype == 'float64':
+                df_p2['timestamp'] = pd.to_datetime(df_p2['timestamp'], unit='s', errors='coerce')
+            else:
+                df_p2['timestamp'] = pd.to_datetime(df_p2['timestamp'], errors='coerce')
+            df_p2 = df_p2.dropna(subset=['timestamp'])
+            fig.add_trace(go.Scatter(
+                x=df_p2['timestamp'],
+                y=df_p2[parameter],
+                mode='lines',
+                name=f'P2 {parameter.capitalize()}',
+                line=dict(color='blue')
+            ))
+
+        if show_p3 and df_p3 is not None and not df_p3.empty and parameter in df_p3.columns:
+            df_p3 = df_p3.copy()
+            if df_p3['timestamp'].dtype == 'int64' or df_p3['timestamp'].dtype == 'float64':
+                df_p3['timestamp'] = pd.to_datetime(df_p3['timestamp'], unit='s', errors='coerce')
+            else:
+                df_p3['timestamp'] = pd.to_datetime(df_p3['timestamp'], errors='coerce')
+            df_p3 = df_p3.dropna(subset=['timestamp'])
+            fig.add_trace(go.Scatter(
+                x=df_p3['timestamp'],
+                y=df_p3[parameter],
+                mode='lines',
+                name=f'P3 {parameter.capitalize()}',
+                line=dict(color='red')
+            ))
+
+        fig.update_layout(
+            title=f"{parameter.capitalize()} over time",
+            xaxis_title="Time",
+            yaxis_title=parameter.capitalize(),
+            margin=dict(l=20, r=20, t=40, b=20),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            hovermode='closest',
+            yaxis=dict(
+                autorange=True,
+                rangemode='normal'
+            ),
+            xaxis=dict(
+                type='date'
+            ),
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            )
+        )
+
+        return fig.to_json()
+    except Exception as e:
+        logger.error(f"Error creating graph for {parameter}: {e}")
+        return None
+
+```
+
+
+get_historical_data() の先頭に次を追加：
+```python
+force_reload = True  # 常にファイルを再読み込み
+if not force_reload and self.data_cache[device_id] is not None:
+```
+ファイルごとの読み込みログを追加：
+logger.info(f"Reading historical data for {device_id} from file: {file_path}")
+
+create_time_series_graph() に以下を追加：
+
+logger.info(f"Adding {device_id} data for {parameter}, {len(df)} rows, min={df['timestamp'].min()}, max={df['timestamp'].max()}")
+
+## Additional action_Ver.4.32 Debag
+現在のプログラムだと添付のようにセンサデータが入ったCSVファイルの名前がP2orP3_年月日.csvの順で作られていると読み取れないのではないでしょうか？ 保存されるファイル名を固定し、必ず同一のファイルを読み取ってグラフ化するように改造したいです。
+- 改造ポイント 各デバイスのデータを常に以下の「固定ファイル名」から読み取るよう変更：
+
+```python
+/var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv
+/var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv
+```
+ファイルが存在しない場合は logger.warning(...) を出力し
+timestamp 列が数値でも文字列でも自動判定して読み取り可能にする。
+保存スクリプトかロガー側で P2_fixed.csv, P3_fixed.csv を常に上書き出力するよう変更
+たとえば P2_2025-07-05.csv を記録したあとに P2_fixed.csv にもコピー
+cp P2_2025-07-05.csv P2_fixed.csv
+こうすることで
+日付依存のファイル読み取り問題が解消する
+毎日ファイル名が変わる問題がなくす
+自動グラフ更新や表示がシンプルに制御可能にする。
+
+という改良を実施してください。
+作業はすべて下記で実施すること
+G:\RPi-Development\RaspPi5_APconnection\Ver4.32Debag
+
+
+## Additional action_Ver.4.35 Debag
+
+プログラムは下記を参考にする。
+作業はすべて下記のフォルダで実施する。
+G:\RPi-Development\RaspPi5_APconnection\Ver4.35Debag
+
+グラフがゼロスタートになるため既存のWebグラフ描画のルールを見直す。
+
+ データソース	/var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv など固定名
+ グラフ描画	Plotly.js（HTML内で呼び出し）
+ 自動更新	を実施
+
+例えば下記のようなシンプルなプログラムを適応する。ただしVer4.32までに使われているパラメータはすべて機能として搭載すること。
+CSVとして任意の期間の書き出しや、グラフの自動更新、XY軸のスケール変更などはこれまで通り可能とし。
+アクセス方法もIPアドレスの変更などは行わず、あくまでもWeb収集、描画の部分だけで実装すること。
+```python
+# Simple CSV Reader and Plotter Web UI
+# Requirements: Flask, pandas, plotly
+
+import os
+from flask import Flask, render_template_string, jsonify
+import pandas as pd
+import plotly.graph_objs as go
+
+app = Flask(__name__)
+
+CSV_FILE_P2 = "/var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv"
+CSV_FILE_P3 = "/var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv"
+
+TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sensor Data Graph</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>Sensor Data Dashboard</h1>
+    <div id="graph_temperature"></div>
+    <div id="graph_humidity"></div>
+    <div id="graph_absolute_humidity"></div>
+    <div id="graph_co2"></div>
+    <div id="graph_pressure"></div>
+    <div id="graph_gas_resistance"></div>
+    <script>
+        const graphs = ['temperature', 'humidity', 'absolute_humidity', 'co2', 'pressure', 'gas_resistance'];
+        graphs.forEach(param => {
+            fetch(`/data/${param}`)
+                .then(response => response.json())
+                .then(graph => Plotly.newPlot(`graph_${param}`, graph.data, graph.layout));
+        });
+    </script>
+</body>
+</html>
+"""
+
+def read_csv_data():
+    df_p2 = pd.read_csv(CSV_FILE_P2) if os.path.exists(CSV_FILE_P2) else pd.DataFrame()
+    df_p3 = pd.read_csv(CSV_FILE_P3) if os.path.exists(CSV_FILE_P3) else pd.DataFrame()
+
+    if 'timestamp' in df_p2.columns:
+        df_p2['timestamp'] = pd.to_datetime(df_p2['timestamp'], unit='s', errors='coerce')
+    if 'timestamp' in df_p3.columns:
+        df_p3['timestamp'] = pd.to_datetime(df_p3['timestamp'], unit='s', errors='coerce')
+
+    return df_p2.dropna(subset=['timestamp']), df_p3.dropna(subset=['timestamp'])
+
+@app.route('/')
+def index():
+    return render_template_string(TEMPLATE)
+
+def generate_graph(df_p2, df_p3, parameter, label):
+    fig = go.Figure()
+
+    if parameter in df_p2.columns:
+        fig.add_trace(go.Scatter(x=df_p2['timestamp'], y=df_p2[parameter],
+                                 mode='lines', name=f'P2 {label}'))
+    if parameter in df_p3.columns:
+        fig.add_trace(go.Scatter(x=df_p3['timestamp'], y=df_p3[parameter],
+                                 mode='lines', name=f'P3 {label}'))
+
+    fig.update_layout(title=f"{label} Over Time",
+                      xaxis_title="Time",
+                      yaxis_title=label)
+    return fig
+
+@app.route('/data/<parameter>')
+def get_graph(parameter):
+    label_map = {
+        "temperature": "Temperature (°C)",
+        "humidity": "Relative Humidity (%)",
+        "absolute_humidity": "Absolute Humidity (g/m³)",
+        "co2": "CO2 Concentration (ppm)",
+        "pressure": "Pressure (hPa)",
+        "gas_resistance": "Gas Resistance (Ω)"
+    }
+    label = label_map.get(parameter, parameter)
+    df_p2, df_p3 = read_csv_data()
+    fig = generate_graph(df_p2, df_p3, parameter, label)
+    return jsonify(fig.to_plotly_json())
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080, debug=True)
+
+```
+
+## Additional action_Ver.4.40 Debag
+- Ver4.35のstart_p1_solo.pyのように単独ですべての関連プログラムを起動できる構造にしたP1_app_simple含めた起動プログラムモジュールを構築してほしい。
+- Ver4.40とする。またすべてのファイルの語尾に44と記載して別バージョンとの差が分かるように工夫すること。新しいディレクトリを構築すること。READMEも刷新して日本語のみにすること。
+- まずはP1の統合システム構築に集中すること。
+- 基本構造は一つのファイルを実行することでconnection_monitor, data_collection,web_interfaceを統合して実行できるようにする。
+- またconnection_monitor,data_collection,web_interfaceのプログラムも長大なため重要部分ごとに分割できれば分割し、軽量化とメンテナンス性向上を進める
+- 構造の全体像や使用方法、注意点、は日本語のmanualをカテゴリごとに複数作成する。
+
+
+## Additional action_Ver.4.44 Debag
+p1に適合するようP2,P3のプログラムを作成する。
+G:\RPi-Development\RaspPi5_APconnection\Ver4.44\P2_software_solo44
+G:\RPi-Development\RaspPi5_APconnection\Ver4.44\P3_software_solo44
+Wifiの制御系やルールはG:\RPi-Development\RaspPi5_APconnection\Ver4.35Debagを参考にする。
+
+
+## Additional action_Ver.4.45 Debag
+- P1のエラーFlaskアプリの `/data/pressure` などのAPIエンドポイントで `jsonify(fig.to_dict())` を返そうとした際に発生しています。
+その中身に「`ndarray`（NumPy配列）」型のデータが含まれていたため、FlaskのJSONエンコーダーでシリアライズできなかったことが原因となる問題を解決する。
+- Python標準の `json` ライブラリやFlaskの `jsonify` は、NumPyの `ndarray` オブジェクトを直接JSON形式に変換できません。
+- 多くの場合、グラフやデータ集計のための内部処理でNumPy配列が生成され、それが `dict` から除去または変換されないまま返されていると、このエラーが発生します。
+- おそらく `fig.to_dict()` の内部に `numpy.ndarray` 型の値が含まれている可能性がある
+- #### 1. ndarray をリストに変換する
+NumPy配列を含むデータを返す部分で、配列を `.tolist()` でPythonのリストに変換しましょう。
+#### 2. どこでndarrayが含まれているか特定する
+`fig.to_dict()` で返される内容を `print()` などで確認し、どこが `ndarray` になっているか調べてください。
+#### 3. 変換例（修正版）
+例えば、`fig.to_dict()` の直前で変換：
+
+
+```python
+# P1_app_simple44.py
+import numpy as np
+
+def jsonify_numpy(obj):
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, dict):
+        return {k: jsonify_numpy(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [jsonify_numpy(i) for i in obj]
+    return obj
+
+# get_graph_data内
+data = fig.to_dict()
+data = jsonify_numpy(data)
+return jsonify(data)
+
+```
+
+根本的な修正方法として
+- グラフやデータ処理でNumPy配列をDataFrameなどから取り出す場合は、`tolist()` に直してから辞書化してください。
+- 例えばpandasを使っている場合、`df["pressure"].values.tolist()` のように変換。
+すべての作業は以下のリンクで実施する。
+G:\RPi-Development\RaspPi5_APconnection\Ver4.45
+
+
+
+## Additional action_Ver.4.45 Debag 2
+
+下記のエラーの対応を実施する。
+
+  File "/home/pi/RaspPi5_APconnection/Ver4.45/p1_software_solo44/data_collection/P1_data_collector_solo44.py", line 420
+    client_socket.sendall(b'{"status": "error", "message": "データの保存に失敗しました"}')
+                                                                            ^
+SyntaxError: bytes can only contain ASCII literal characters
+2025-07-06 15:56:02,844 - INFO - Connection data for P2: {'timestamp': '2025-07-06 15:56:01', 'online': False, 'signal_strength': None, 'noise_level': None, 'snr': None, 'ping_time': None}
+2025-07-06 15:56:03,845 - INFO - Connection data for P3: {'timestamp': '2025-07-06 15:56:01', 'online': False, 'signal_strength': None, 'noise_level': None, 'snr': None, 'ping_time': None}
+2025-07-06 15:56:08,850 - WARNING - Could not find noise level for channel 6
+2025-07-06 15:56:08,921 - INFO - Adding P2 data for temperature: 2012 points, range: 24.79836 - 36.02629
+2025-07-06 15:56:08,942 - INFO - Adding P3 data for temperature: 1381 points, range: 27.20832 - 39.38586
+2025-07-06 15:56:08,958 - INFO - Adding P2 data for co2: 2012 points, range: 421 - 766
+2025-07-06 15:56:08,998 - INFO - Adding P2 data for absolute_humidity: 2012 points, range: 13.0 - 22.07
+2025-07-06 15:56:09,003 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /data/temperature?days=1&show_p2=true&show_p3=true HTTP/1.1" 200 -
+2025-07-06 15:56:09,033 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /api/connection/status HTTP/1.1" 200 -
+2025-07-06 15:56:09,038 - INFO - Adding P3 data for co2: 1381 points, range: 636 - 809
+2025-07-06 15:56:09,067 - INFO - Adding P2 data for humidity: 2012 points, range: 49.77236 - 71.46115
+2025-07-06 15:56:09,078 - INFO - Adding P3 data for absolute_humidity: 1381 points, range: 12.61 - 18.93
+2025-07-06 15:56:09,080 - INFO - Adding P2 data for gas_resistance: 2012 points, range: 4893 - 12003
+2025-07-06 15:56:09,101 - INFO - Adding P3 data for humidity: 1381 points, range: 30.73977 - 55.30675
+2025-07-06 15:56:09,120 - INFO - Adding P3 data for gas_resistance: 1381 points, range: 9928 - 13302
+2025-07-06 15:56:09,125 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /data/absolute_humidity?days=1&show_p2=true&show_p3=true HTTP/1.1" 200 -
+2025-07-06 15:56:09,126 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /data/co2?days=1&show_p2=true&show_p3=true HTTP/1.1" 200 -
+2025-07-06 15:56:09,154 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /data/humidity?days=1&show_p2=true&show_p3=true HTTP/1.1" 200 -
+2025-07-06 15:56:09,165 - INFO - Adding P2 data for pressure: 2012 points, range: 995.611 - 998.3777
+2025-07-06 15:56:09,179 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /data/gas_resistance?days=1&show_p2=true&show_p3=true HTTP/1.1" 200 -
+2025-07-06 15:56:09,192 - INFO - Adding P3 data for pressure: 1381 points, range: 996.7824 - 998.278
+2025-07-06 15:56:09,226 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /data/pressure?days=1&show_p2=true&show_p3=true HTTP/1.1" 200 -
+2025-07-06 15:56:09,855 - INFO - Connection data for P2: {'timestamp': '2025-07-06 15:56:08', 'online': False, 'signal_strength': None, 'noise_level': None, 'snr': None, 'ping_time': None}
+2025-07-06 15:56:10,860 - INFO - Connection data for P3: {'timestamp': '2025-07-06 15:56:08', 'online': False, 'signal_strength': None, 'noise_level': None, 'snr': None, 'ping_time': None}
+2025-07-06 15:56:12,138 - WARNING - data_collector が予期せず終了しました (終了コード: 1)、再起動しています...
+2025-07-06 15:56:12,139 - INFO - データ収集サービスを開始しています...
+2025-07-06 15:56:12,139 - INFO - データ収集サービスが開始されました (PID: 327875)
+2025-07-06 15:56:12,139 - INFO - P2とP3用のデータディレクトリが存在することを確認しました
+
+===== P1 サービスステータス (Ver 4.44) =====
+data_collector: ✗ 停止中 (終了コード: 1)
+web_interface: ✓ 正常稼働中 (PID: 326805)
+connection_monitor: ✓ 正常稼働中 (PID: 326806)
+
+一部のサービスに問題があります。再起動を試みています。
+=============================
+
+  File "/home/pi/RaspPi5_APconnection/Ver4.45/p1_software_solo44/data_collection/P1_data_collector_solo44.py", line 420
+    client_socket.sendall(b'{"status": "error", "message": "データの保存に失敗しました"}')
+                                                                            ^
+SyntaxError: bytes can only contain ASCII literal characters
+^C
+WiFiモニターを停止しています...
+2025-07-06 15:56:14,029 - INFO - WiFi monitor stopped
+2025-07-06 15:56:14,029 - INFO - シグナル 2 を受信しました、シャットダウンします...
+WiFiモニターが停止しました
+2025-07-06 15:56:14,029 - INFO - プロセスをクリーンアップしています...
+2025-07-06 15:56:14,030 - INFO - web_interface を終了しています (PID: 326805)...
+2025-07-06 15:56:14,037 - INFO - connection_monitor を終了しています (PID: 326806)...
+2025-07-06 15:56:14,038 - INFO - プロセスをクリーンアップしています..
+
+- このエラーは、「バイトリテラル（b''）」の中に日本語などASCII範囲外の文字（ここでは「データの保存に失敗しました」）をそのまま書いたために発生
+下記のように修正が必要と想定
+- client_socket.sendall('{"status": "error", "message": "データの保存に失敗しました"}'.encode('utf-8'))
+
+## Additional action_Ver.4.45 Debag 3
+- グラフの縦軸・横軸が「おかしな値」になる問題がある。
+ 気温、相対湿度、絶対湿度、CO2、気圧、ガス抵抗すべての値が一律同じ値で同じ推移をしている。
+ おそらくP2_fixed.csv やP3_fixed.csvを読み込んでいない可能性が考えられるので見直す
+
+画像から判断する限り：
+- 横軸（時間軸）が数値または連番的に見える → timestampの認識ミス
+
+- 縦軸（値のスケール）が「小数点以下が異常に細かい」または「極端な値」で表示されている可能性あり
+- ① 【timestampの型が文字列またはUNIX秒数で誤認識されている】
+原因：
+P1_app_simple44.py の read_csv_data() 関数にて、timestampをdatetime型に変換しようとしているが、
+CSVに含まれる timestamp が文字列 or 整数であり、正しく pd.to_datetime() されていない可能性がある。
+```python
+if df['timestamp'].dtype == 'int64' or df['timestamp'].dtype == 'float64':
+    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s', errors='coerce')
+else:
+    df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+
+```
+
+対処：強制的に文字列として to_datetime する方が安全：
+```python
+
+df['timestamp'] = pd.to_datetime(df['timestamp'].astype(str), errors='coerce')
+
+
+```
+
+原因2 ：
+pressure や gas_resistance が文字列として読まれており、グラフ描画時に誤ったスケーリングを引き起こす。
+対処法：
+read_csv_data() 関数内で、以下のように明示的に型変換：
+```python
+for col in ["temperature", "humidity", "pressure", "gas_resistance", "co2", "absolute_humidity"]:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+```
+
+【データが1点または同一値しかなくグラフ軸が自動スケール失敗】
+原因3 ：
+Plotlyが縦軸のスケーリングに失敗し、極端な範囲やNaNが発生すると、空グラフ or 変な軸になる。
+
+対策：
+generate_graph() 内でデータの値が2点以上（かつユニーク）あるか確認するロジックは入っているが、それでも yaxis.range を強制指定してもよい：
+
+```python
+fig.update_yaxes(autorange=True, rangemode="tozero")  # or set a manual range
+
+```
+【CSVの値が途中で欠損 or フォーマット異常】
+原因4：
+NaNや空白セルが多く含まれると、Plotlyは線を描画しない、軸がおかしくなる。
+対処法：
+df.dropna() だけでなく、読み込み直後にログ確認を行う：
+```python
+
+logger.info(df.dtypes)
+logger.info(df.head())
+
+```
+
+## Additional action_Ver.4.5 Debag
+作業はすべて下記のフォルダで実施する
+G:\RPi-Development\RaspPi5_APconnection\Ver4.5 
+P1については G:\RPi-Development\RaspPi5_APconnection\Ver4.5\p1_software_solo45にすべて保管すること。
+- 
+- G:\RPi-Development\RaspPi5_APconnection\GraphViewer_v1にあるGraph_Viewerの機能をVer4.44のP1モジュールに導入する。
+- P2のCSVデータファイルのパス（デフォルト: /var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv）
+- P3のCSVデータファイルのパス（デフォルト: /var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv）
+- 表示するデータの日数設定（デフォルト: 1）３日、一週間、３か月、６か月、１年、すべて で選択できるようにする。
+- output グラフを保存する機能を追加する。
+- データ更新 ３０秒ごとにグラフを更新するすなわち上記リンクからデータを再度任意の幅で読み込む。時間がかかっている場合は別途注意喚起と読み込みキャンセル機能を追加する。
+- P2、P3センサーのリアルタイム数値（グラフではなく数値のみ）を表示できるウィンドウを追加する（これはsimple化する前の仕様とほぼ同じ）
+- センサーノードの接続状態は更新されていないため、１０秒ごとに正しくシグナルを確認し、それをWebアプリ上で表示できるようにする。
+
+現時点で実行すると下記のようなエラーになるため修正する。
+(envmonitor-venv) pi@raspberrypi://home/pi/RaspPi5_APconnection/Ver4.5/p1_software_solo45 $ sudo python3 start_p1_solo45.py 
+2025-07-06 18:58:58,414 - INFO - アクセスポイントのセットアップを開始しています...
+2025-07-06 18:58:58,434 - INFO - アクセスポイントを設定しています...
+/home/pi/envmonitor-venv/bin/python3: can't open file '/home/pi/RaspPi5_APconnection/Ver4.5/p1_software_solo45/ap_setup/P1_ap_setup_solo45.py': [Errno 2] No such file or directory
+2025-07-06 18:58:58,455 - ERROR - アクセスポイントのセットアップに失敗しました: Command '['/home/pi/envmonitor-venv/bin/python3', '/home/pi/RaspPi5_APconnection/Ver4.5/p1_software_solo45/ap_setup/P1_ap_setup_solo45.py', '--configure']' returned non-zero exit status 2.
+2025-07-06 18:58:58,456 - ERROR - アクセスポイントのセットアップに失敗しました、終了します
+2025-07-06 18:58:58,457 - INFO - プロセスをクリーンアップしています...
+(envmonitor-venv) pi@raspberrypi://home/pi/RaspPi5_APconnection/Ver4.5/p1_software_solo45 $ 
+
+## Additional action_Ver.4.51
+1.ブラウザのエラーメッセージから、Plotlyの古いCDNバージョン plotly-latest.min.js が読み込まれているため、以下のような影響が考えられます：
+plotly-latest.min.js は2021年7月で更新終了（v1.58.5）
+現在のWebアプリは v2.x 以降の機能（例：複数軸の自動調整や描画オプション） を前提としている可能性あり
+そのため「描画されない」「一部データしか出ない」といった症状が出る場合があります
+
+<!-- 修正前（古いCDN） -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<!-- 修正後（明示的に最新版を指定）例：v2.27.0 -->
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+
+P1_app_simple45.py の中にある HTMLテンプレート（TEMPLATE = """...""" という長い文字列）の中
+そこの <head> セクションを修正してください。
+
+2.favicon.ico の404は無視可能ですが、警告を避けたいならWebアプリのルートディレクトリにダミーの favicon.ico を置くか、Flaskで /favicon.ico に 204 No Content を返すようにする
+
+## Additional action_Ver.4.52
+作業フォルダ指定 G:\RPi-Development\RaspPi5_APconnection\Ver4.52
+タイムスタンプが2000年１月１日00：00から開始しているので修正。
+
+原因はtimestamp列の変換がうまくいかず、Pandasがデフォルトで1970/2000起点のダミー値を使っていることを意味していると想定
+- 修正内容
+    read_csv_data() 内で timestamp を処理する際に、
+    まず文字列か数値かを検出
+    pd.to_datetime(..., errors='coerce') を明示的に呼び、変換失敗した場合はログに警告
+    NaTを除去することで「2000-01-01」などのダミー値を排除
+
+
+- P1_app_simple45.py の read_csv_data() 関数で timestamp の扱いを明確に修正
+- 2000年1月1日になるのは、UNIX秒（1970起点）の数値を string として読んで datetime に変換できなかった場合
+  エラー回避のため、明示的に日時パースと失敗ログを入れる
+
+```python
+
+if 'timestamp' in df.columns:
+    logger.info(f"Original timestamp dtype: {df['timestamp'].dtype}")
+
+    try:
+        # UNIX秒（数字）か文字列かで分岐
+        if np.issubdtype(df['timestamp'].dtype, np.number):
+            logger.info("Detected numeric timestamp format (UNIX time)")
+            df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s', errors='coerce')
+        else:
+            logger.info("Detected string timestamp format")
+            df['timestamp'] = pd.to_datetime(df['timestamp'].astype(str), errors='coerce')
+
+        logger.info(f"Converted timestamp dtype: {df['timestamp'].dtype}")
+        logger.info(f"Timestamp range: {df['timestamp'].min()} to {df['timestamp'].max()}")
+
+    except Exception as e:
+        logger.error(f"Failed to convert timestamp: {e}")
+        df['timestamp'] = pd.NaT
+
+```
+
+## Additional action_Ver.4.52 Debug2
+下記対応を実施する。データはG:\RPi-Development\RaspPi5_APconnection\Ver4.52内で実行する
+ 問題の本質（2000年1月1日表示）[P1_app_simple45.py](../RaspPi5_APconnection/Ver4.52/p1_software_solo45/web_interface/P1_app_simple45.py)
+plotly.js によるグラフ表示が "x" 軸のタイムスタンプを "数値（エポック）" と誤認識しています。
+Flask 側 /data/<parameter> API が返す JSON に含まれる "timestamp" が正しくフォーマットされていない可能性があります。
+
+修正すべき点：
+timestamp は datetime64型のまま ではなく、ISO形式の文字列（例: "2025-07-06 20:45:00"） に変換する。
+JSONの orient="records" でリスト形式にして返す。
+
+```python
+@app.route('/data/<parameter>')
+def get_graph_data(parameter):
+    days = request.args.get('days', default=1, type=int)
+    show_p2 = request.args.get('show_p2', default='true').lower() == 'true'
+    show_p3 = request.args.get('show_p3', default='true').lower() == 'true'
+
+    df_p2 = read_csv_data("P2", days) if show_p2 else None
+    df_p3 = read_csv_data("P3", days) if show_p3 else None
+
+    frames = []
+    if df_p2 is not None:
+        df_p2 = df_p2.copy()
+        df_p2["device_id"] = "P2"
+        frames.append(df_p2)
+    if df_p3 is not None:
+        df_p3 = df_p3.copy()
+        df_p3["device_id"] = "P3"
+        frames.append(df_p3)
+
+    if not frames:
+        return jsonify({"error": "データが見つかりませんでした"})
+
+    df = pd.concat(frames)
+    df = df.dropna(subset=["timestamp"])
+    df = df.sort_values("timestamp")
+
+    # ✅ ここが重要: timestamp列を文字列化してISO形式に変換
+    df["timestamp"] = df["timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    if parameter not in df.columns:
+        return jsonify({"error": f"'{parameter}'のデータがありません"})
+
+    df = df[["timestamp", "device_id", parameter]]
+
+    return jsonify(df.to_dict(orient="records"))
+
+
+
+```

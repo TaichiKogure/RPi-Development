@@ -79,11 +79,16 @@ class DataVisualizer:
         self.last_data = {}
         self.data_cache = {"P2": None, "P3": None}
         self.lock = threading.Lock()
+        self.running = True
+        self.update_thread = None
 
         # Ensure the data directories exist
         os.makedirs(self.config["data_dir"], exist_ok=True)
         os.makedirs(os.path.join(self.config["data_dir"], self.config["rawdata_p2_dir"]), exist_ok=True)
         os.makedirs(os.path.join(self.config["data_dir"], self.config["rawdata_p3_dir"]), exist_ok=True)
+
+        # Start background thread to update data cache
+        self.start_update_thread()
 
     def get_latest_data(self):
         """Get the latest data from the API or cached data."""
@@ -129,6 +134,36 @@ class DataVisualizer:
         except Exception as e:
             logger.error(f"Error getting connection status: {e}")
             return {}
+
+    def start_update_thread(self):
+        """Start a background thread to update the data cache."""
+        if self.update_thread is None or not self.update_thread.is_alive():
+            self.running = True
+            self.update_thread = threading.Thread(target=self._update_cache_periodically)
+            self.update_thread.daemon = True
+            self.update_thread.start()
+            logger.info("Started background thread to update data cache")
+
+    def stop_update_thread(self):
+        """Stop the background thread that updates the data cache."""
+        self.running = False
+        if self.update_thread and self.update_thread.is_alive():
+            self.update_thread.join(timeout=1)
+            logger.info("Stopped background thread for data cache updates")
+
+    def _update_cache_periodically(self):
+        """Update the data cache periodically."""
+        while self.running:
+            try:
+                # Update cache for both P2 and P3
+                for device_id in ["P2", "P3"]:
+                    self.get_historical_data(device_id, days=1)
+
+                # Sleep for 10 seconds
+                time.sleep(10)
+            except Exception as e:
+                logger.error(f"Error updating data cache: {e}")
+                time.sleep(10)  # Sleep even if there's an error
 
     def get_historical_data(self, device_id, days=1):
         """Get historical data for the specified device."""
@@ -1490,7 +1525,7 @@ def create_templates():
 
 def main():
     """Main function to parse arguments and start the web server."""
-    parser = argparse.ArgumentParser(description="Raspberry Pi 5 Environmental Data Web Interface - Solo Version 4.0")
+    parser = argparse.ArgumentParser(description="Raspberry Pi 5 Environmental Data Web Interface - Solo Version 4.3")
     parser.add_argument("--port", type=int, default=DEFAULT_CONFIG["web_port"],
                         help=f"Port to listen on (default: {DEFAULT_CONFIG['web_port']})")
     parser.add_argument("--data-dir", type=str, default=DEFAULT_CONFIG["data_dir"],
@@ -1512,9 +1547,25 @@ def main():
     global visualizer
     visualizer = DataVisualizer(config)
 
-    # Start the web server
-    logger.info(f"Starting web server on port {config['web_port']}")
-    app.run(host='0.0.0.0', port=config['web_port'], debug=config['debug_mode'])
+    # Register signal handlers for graceful shutdown
+    import signal
+    def signal_handler(sig, frame):
+        logger.info("Received shutdown signal, stopping threads...")
+        if visualizer:
+            visualizer.stop_update_thread()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    try:
+        # Start the web server
+        logger.info(f"Starting web server on port {config['web_port']}")
+        app.run(host='0.0.0.0', port=config['web_port'], debug=config['debug_mode'])
+    finally:
+        # Ensure threads are stopped when the application exits
+        if visualizer:
+            visualizer.stop_update_thread()
 
 if __name__ == "__main__":
     main()
