@@ -1410,3 +1410,621 @@ def get_graph_data(parameter):
 
 
 ```
+## Additional action_Ver.4.53
+作業は下記で行う
+G:\RPi-Development\RaspPi5_APconnection\Ver4.53
+
+グラフの描画部分についてはCSVを読み込んで表示するUIとする。例えば下記のように構成を明示する。
+ただしセンサーノードのリアルタイム表示やシグナル強度情報については変更しないこと。
+
+
+```python
+
+# Default file paths
+DEFAULT_P2_PATH = "/var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv"
+DEFAULT_P3_PATH = "/var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv"
+
+def parse_arguments():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='Environmental Data Visualization Tool')
+    parser.add_argument('--p2-path', type=str, default=DEFAULT_P2_PATH,
+                        help=f'Path to P2 CSV data file (default: {DEFAULT_P2_PATH})')
+    parser.add_argument('--p3-path', type=str, default=DEFAULT_P3_PATH,
+                        help=f'Path to P3 CSV data file (default: {DEFAULT_P3_PATH})')
+    parser.add_argument('--days', type=int, default=1,
+                        help='Number of days of data to display (default: 1)')
+    parser.add_argument('--show-p2', action='store_true', default=True,
+                        help='Show P2 data (default: True)')
+    parser.add_argument('--show-p3', action='store_true', default=True,
+                        help='Show P3 data (default: True)')
+    parser.add_argument('--output', type=str, default=None,
+                        help='Output file path (default: None, display in browser)')
+    return parser.parse_args()
+
+def read_csv_data(csv_path, days=1):
+    """Read data from CSV file and process it."""
+    # Check if file exists
+    if not os.path.exists(csv_path):
+        logger.warning(f"CSV file not found: {csv_path}")
+        return None
+
+    try:
+        # Read CSV file
+        logger.info(f"Reading CSV file: {csv_path}")
+        df = pd.read_csv(csv_path)
+
+        # Log initial data types and sample data
+        logger.info(f"CSV columns and types: {df.dtypes}")
+        if not df.empty:
+            logger.info(f"Sample data (first row): {df.iloc[0].to_dict()}")
+
+        # Convert timestamp to datetime - simplified approach that handles both numeric and string formats
+        if 'timestamp' in df.columns:
+            logger.info(f"Original timestamp dtype: {df['timestamp'].dtype}")
+
+            # Check if timestamp is numeric (int64 or float64)
+            if df['timestamp'].dtype == 'int64' or df['timestamp'].dtype == 'float64':
+                logger.info("Detected numeric timestamp format (seconds since epoch)")
+                df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s', errors='coerce')
+            else:
+                # Convert to string first to handle any format safely
+                logger.info("Detected string timestamp format")
+                df['timestamp'] = pd.to_datetime(df['timestamp'].astype(str), errors='coerce')
+
+            logger.info(f"Converted timestamp dtype: {df['timestamp'].dtype}")
+            logger.info(f"Timestamp range: {df['timestamp'].min()} to {df['timestamp'].max()}")
+
+        # Drop rows with invalid timestamps
+        original_count = len(df)
+        df = df.dropna(subset=['timestamp'])
+        if len(df) < original_count:
+            logger.warning(f"Dropped {original_count - len(df)} rows with invalid timestamps")
+
+        # Convert all numeric columns to proper numeric types
+        numeric_columns = ["temperature", "humidity", "pressure", "gas_resistance", "co2", "absolute_humidity"]
+        for col in numeric_columns:
+            if col in df.columns:
+                # Log original data type
+                logger.info(f"Column '{col}' original dtype: {df[col].dtype}")
+
+                # Store original values for comparison
+                original_values = df[col].copy()
+
+                # Convert to numeric - force conversion to handle any format
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+
+                # Check if conversion changed any values or created NaNs
+                changed_count = (df[col] != original_values).sum()
+                nan_count = df[col].isna().sum()
+
+                logger.info(f"Column '{col}' converted to numeric. Changed values: {changed_count}, NaN values: {nan_count}")
+                if not df[col].empty and not df[col].isna().all():
+                    logger.info(f"Column '{col}' range: {df[col].min()} to {df[col].max()}")
+
+        # Filter data for the specified time range
+        if days > 0:
+            cutoff_date = datetime.datetime.now() - datetime.timedelta(days=days)
+            before_count = len(df)
+            df = df[df['timestamp'] >= cutoff_date]
+            logger.info(f"Filtered data for last {days} days: {before_count} -> {len(df)} rows")
+
+        # Sort by timestamp
+        df = df.sort_values(by='timestamp')
+
+        return df
+
+    except Exception as e:
+        logger.error(f"Error reading CSV file {csv_path}: {e}")
+        return None
+
+def generate_graph(parameter, df_p2, df_p3, show_p2=True, show_p3=True):
+    """Generate a graph for the specified parameter."""
+    # Define parameter labels
+    label_map = {
+        "temperature": "気温 (°C)",
+        "humidity": "相対湿度 (%)",
+        "absolute_humidity": "絶対湿度 (g/m³)",
+        "co2": "CO2濃度 (ppm)",
+        "pressure": "気圧 (hPa)",
+        "gas_resistance": "ガス抵抗 (Ω)"
+    }
+    label = label_map.get(parameter, parameter.capitalize())
+
+    # Create figure
+    fig = go.Figure()
+
+    # Add P2 data if available
+    if show_p2 and df_p2 is not None and not df_p2.empty and parameter in df_p2.columns:
+        # Check for valid data (at least 2 unique non-NaN values)
+        p2_values = df_p2[parameter].dropna()
+        if len(p2_values) > 0 and len(p2_values.unique()) >= 2:
+            # Log detailed information about the data being plotted
+            min_val = p2_values.min()
+            max_val = p2_values.max()
+            mean_val = p2_values.mean()
+            logger.info(f"Adding P2 data for {parameter}: {len(p2_values)} points, range: {min_val} - {max_val}, mean: {mean_val}")
+
+            # Verify timestamp data is properly formatted
+            if not pd.api.types.is_datetime64_any_dtype(df_p2['timestamp']):
+                logger.warning(f"P2 timestamp column is not datetime type: {df_p2['timestamp'].dtype}")
+                # Try to convert again as a last resort
+                df_p2['timestamp'] = pd.to_datetime(df_p2['timestamp'], errors='coerce')
+                df_p2 = df_p2.dropna(subset=['timestamp'])
+                logger.info(f"Converted P2 timestamps. Remaining rows: {len(df_p2)}")
+
+            # Add trace to the figure
+            fig.add_trace(go.Scatter(
+                x=df_p2['timestamp'],
+                y=df_p2[parameter],
+                mode='lines',
+                name=f'P2 {label}',
+                line=dict(color='blue')
+            ))
+        else:
+            logger.warning(f"P2 data for {parameter} has insufficient unique values: {len(p2_values)} points, {len(p2_values.unique())} unique values")
+
+    # Add P3 data if available
+    if show_p3 and df_p3 is not None and not df_p3.empty and parameter in df_p3.columns:
+        # Check for valid data (at least 2 unique non-NaN values)
+        p3_values = df_p3[parameter].dropna()
+        if len(p3_values) > 0 and len(p3_values.unique()) >= 2:
+            # Log detailed information about the data being plotted
+            min_val = p3_values.min()
+            max_val = p3_values.max()
+            mean_val = p3_values.mean()
+            logger.info(f"Adding P3 data for {parameter}: {len(p3_values)} points, range: {min_val} - {max_val}, mean: {mean_val}")
+
+            # Verify timestamp data is properly formatted
+            if not pd.api.types.is_datetime64_any_dtype(df_p3['timestamp']):
+                logger.warning(f"P3 timestamp column is not datetime type: {df_p3['timestamp'].dtype}")
+                # Try to convert again as a last resort
+                df_p3['timestamp'] = pd.to_datetime(df_p3['timestamp'], errors='coerce')
+                df_p3 = df_p3.dropna(subset=['timestamp'])
+                logger.info(f"Converted P3 timestamps. Remaining rows: {len(df_p3)}")
+
+            # Add trace to the figure
+            fig.add_trace(go.Scatter(
+                x=df_p3['timestamp'],
+                y=df_p3[parameter],
+                mode='lines',
+                name=f'P3 {label}',
+                line=dict(color='red')
+            ))
+        else:
+            logger.warning(f"P3 data for {parameter} has insufficient unique values: {len(p3_values)} points, {len(p3_values.unique())} unique values")
+
+    # Check if we have any traces
+    if not fig.data:
+        logger.warning(f"No valid data to plot for {parameter}")
+        return None
+
+    # Calculate appropriate Y-axis range with padding
+    all_y_values = []
+    if show_p2 and df_p2 is not None and not df_p2.empty and parameter in df_p2.columns:
+        all_y_values.extend(df_p2[parameter].dropna().tolist())
+    if show_p3 and df_p3 is not None and not df_p3.empty and parameter in df_p3.columns:
+        all_y_values.extend(df_p3[parameter].dropna().tolist())
+
+    if all_y_values:
+        min_y = min(all_y_values)
+        max_y = max(all_y_values)
+        padding = (max_y - min_y) * 0.05  # 5% padding
+
+        # Determine appropriate minimum value based on parameter
+        if parameter in ["co2", "gas_resistance", "absolute_humidity"]:
+            # These values are never negative
+            min_range = max(0, min_y - padding)
+        else:
+            # Use actual minimum with padding
+            min_range = min_y - padding
+
+        # Set Y-axis range
+        y_range = [min_range, max_y + padding]
+        logger.info(f"Setting Y-axis range for {parameter}: {y_range}")
+    else:
+        y_range = None
+
+    # Update layout with improved settings
+    fig.update_layout(
+        title=f"{label}の経時変化",
+        xaxis_title="時間",
+        yaxis_title=label,
+        margin=dict(l=20, r=20, t=40, b=20),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        hovermode='closest',
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        # Ensure X-axis is properly formatted as a date
+        xaxis=dict(
+            type='date',
+            tickformat='%Y-%m-%d %H:%M',
+            tickangle=-45
+        )
+    )
+
+    # Set Y-axis range if calculated
+    if y_range:
+        fig.update_yaxes(
+            range=y_range,
+            autorange=False,
+            # Use "tozero" for parameters that should never be negative
+            rangemode="tozero" if parameter in ["co2", "gas_resistance", "absolute_humidity"] else "normal"
+        )
+
+    return fig
+
+def create_dashboard(df_p2, df_p3, show_p2=True, show_p3=True):
+    """Create a dashboard with all parameters."""
+    # Define parameters to plot
+    parameters = ["temperature", "humidity", "absolute_humidity", "co2", "pressure", "gas_resistance"]
+
+    # Create a subplot figure with 3x2 grid
+    fig = make_subplots(
+        rows=3, cols=2,
+        subplot_titles=[
+            "気温 (°C)", "相対湿度 (%)",
+            "絶対湿度 (g/m³)", "CO2濃度 (ppm)",
+            "気圧 (hPa)", "ガス抵抗 (Ω)"
+        ],
+        vertical_spacing=0.1,
+        horizontal_spacing=0.05
+    )
+
+    # Map parameters to subplot positions
+    param_positions = {
+        "temperature": (1, 1),
+        "humidity": (1, 2),
+        "absolute_humidity": (2, 1),
+        "co2": (2, 2),
+        "pressure": (3, 1),
+        "gas_resistance": (3, 2)
+    }
+
+    # Add traces for each parameter
+    for param, (row, col) in param_positions.items():
+        # Add P2 data if available
+        if show_p2 and df_p2 is not None and not df_p2.empty and param in df_p2.columns:
+            p2_values = df_p2[param].dropna()
+            if len(p2_values) > 0 and len(p2_values.unique()) >= 2:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_p2['timestamp'],
+                        y=df_p2[param],
+                        mode='lines',
+                        name=f'P2 {param}',
+                        line=dict(color='blue')
+                    ),
+                    row=row, col=col
+                )
+
+        # Add P3 data if available
+        if show_p3 and df_p3 is not None and not df_p3.empty and param in df_p3.columns:
+            p3_values = df_p3[param].dropna()
+            if len(p3_values) > 0 and len(p3_values.unique()) >= 2:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_p3['timestamp'],
+                        y=df_p3[param],
+                        mode='lines',
+                        name=f'P3 {param}',
+                        line=dict(color='red')
+                    ),
+                    row=row, col=col
+                )
+
+        # Calculate appropriate Y-axis range
+        all_y_values = []
+        if show_p2 and df_p2 is not None and not df_p2.empty and param in df_p2.columns:
+            all_y_values.extend(df_p2[param].dropna().tolist())
+        if show_p3 and df_p3 is not None and not df_p3.empty and param in df_p3.columns:
+            all_y_values.extend(df_p3[param].dropna().tolist())
+
+        if all_y_values:
+            min_y = min(all_y_values)
+            max_y = max(all_y_values)
+            padding = (max_y - min_y) * 0.05  # 5% padding
+
+            # Determine appropriate minimum value based on parameter
+            if param in ["co2", "gas_resistance", "absolute_humidity"]:
+                # These values are never negative
+                min_range = max(0, min_y - padding)
+            else:
+                # Use actual minimum with padding
+                min_range = min_y - padding
+
+            # Set Y-axis range
+            y_range = [min_range, max_y + padding]
+
+            # Update Y-axis for this subplot
+            fig.update_yaxes(
+                range=y_range,
+                autorange=False,
+                rangemode="tozero" if param in ["co2", "gas_resistance", "absolute_humidity"] else "normal",
+                row=row, col=col
+            )
+
+    # Update layout
+    fig.update_layout(
+        title="環境データダッシュボード",
+        height=900,
+        width=1200,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        )
+    )
+
+    # Update all X-axes to be date type
+    for i in range(1, 4):
+        for j in range(1, 3):
+            fig.update_xaxes(
+                type='date',
+                tickformat='%Y-%m-%d %H:%M',
+                tickangle=-45,
+                row=i, col=j
+            )
+
+    return fig
+
+def main():
+    """Main function."""
+    # Parse command line arguments
+    args = parse_arguments()
+
+    # Read data
+    logger.info(f"Reading P2 data from: {args.p2_path}")
+    df_p2 = read_csv_data(args.p2_path, args.days) if args.show_p2 else None
+
+    logger.info(f"Reading P3 data from: {args.p3_path}")
+    df_p3 = read_csv_data(args.p3_path, args.days) if args.show_p3 else None
+
+    # Check if we have any data
+    if (df_p2 is None or df_p2.empty) and (df_p3 is None or df_p3.empty):
+        logger.error("No data available for either P2 or P3")
+        sys.exit(1)
+
+    # Create dashboard
+    logger.info("Creating dashboard")
+    dashboard = create_dashboard(df_p2, df_p3, args.show_p2, args.show_p3)
+
+    # Create individual graphs
+    parameters = ["temperature", "humidity", "absolute_humidity", "co2", "pressure", "gas_resistance"]
+    graphs = {}
+
+    for param in parameters:
+        logger.info(f"Creating graph for {param}")
+        graph = generate_graph(param, df_p2, df_p3, args.show_p2, args.show_p3)
+        if graph:
+            graphs[param] = graph
+
+
+```
+
+## Additional action_Ver.4.53 Debug2
+G:\RPi-Development\RaspPi5_APconnection\Ver4.53のフォルダ内のみで作業完結させる
+Ver4.53のP1_app_simple45.pyの中にgraph_viewer.pyの機能を統合する。
+センサデータモニタやセンサ信号情報モニタを保持しつつCSVを読み込んだグラフを表示する。 
+読み込みは定期的に読み込む自動モードとボタンを押して読み込む主導モードの２つ、また、表示データ範囲を任意の時間で指定できる機能を有する。
+
+## Additional action_Ver.4.53 Debug3
+現時点で不十分な状況で全く統合されていないため修正する。
+G:\RPi-Development\RaspPi5_APconnection\Ver4.53のフォルダ内のみで作業完結させる
+
+Ver4.53のP1_app_simple45.pyの中にgraph_viewer.pyの機能を統合する。
+統合の意味は環境データのCSVファイルを192.168.0.1にアクセスするとグラフの状態で閲覧できる状態にすることだ。
+
+センサデータモニタやセンサ信号情報モニタを保持しつつCSVを読み込んだグラフを表示する。 
+読み込みは定期的に読み込む自動モードとボタンを押して読み込む主導モードの２つ、また、表示データ範囲を任意の時間で指定できる機能を有する。
+改良が施された関連ファイルにはすべてのファイルの語尾に_Uni.pyとなるように表記し明確に区別する。
+
+## Additional action_Ver.4.53 Debug4
+作業はすべて下記フォルダで実施
+G:\RPi-Development\RaspPi5_APconnection\Ver4.53\p1_software_solo45
+
+ 原因の特定：P1_app_simple45_Uni.py におけるCSVファイルパスの設定ミス
+🔍 問題のポイント
+P1_app_simple45_Uni.py では、DEFAULT_CONFIG に p2_csv_path, p3_csv_path を 明示的にセットしていない 場合があり、デフォルト値のまま（空パスまたは無効な相対パス）で読み込もうとします。
+
+その結果、データがロードされず、フロントエンドに表示される内容が「ゼロ」になります。
+
+Uni版では、Webポートやファイルパスのカスタム引数が使えるようになっているのに、活用されていません。
+
+✅ 修正すべきコード：P1_app_simple45_Uni.py の main() 関数
+以下のように修正することで、明示的にCSVファイルパスを設定可能かつ ログで確認できる ようになります。
+
+```python
+
+def main():
+    parser = argparse.ArgumentParser(description='環境データウェブインターフェース')
+    parser.add_argument('--port', type=int, help='リッスンするポート')
+    parser.add_argument('--data-dir', type=str, help='データを読み込むディレクトリ')
+    parser.add_argument('--p2-path', type=str, help='P2のCSVデータファイルのパス')
+    parser.add_argument('--p3-path', type=str, help='P3のCSVデータファイルのパス')
+    parser.add_argument('--debug', action='store_true', help='デバッグモードを有効にする')
+    args = parser.parse_args()
+
+    if args.port:
+        DEFAULT_CONFIG["web_port"] = args.port
+
+    if args.data_dir:
+        DEFAULT_CONFIG["data_dir"] = args.data_dir
+        DEFAULT_CONFIG["p2_csv_path"] = os.path.join(args.data_dir, DEFAULT_CONFIG["rawdata_p2_dir"], "P2_fixed.csv")
+        DEFAULT_CONFIG["p3_csv_path"] = os.path.join(args.data_dir, DEFAULT_CONFIG["rawdata_p3_dir"], "P3_fixed.csv")
+
+    if args.p2_path:
+        DEFAULT_CONFIG["p2_csv_path"] = args.p2_path
+
+    if args.p3_path:
+        DEFAULT_CONFIG["p3_csv_path"] = args.p3_path
+
+    if args.debug:
+        DEFAULT_CONFIG["debug_mode"] = True
+
+    logger.info("グラフ描画機能を統合しました")
+    logger.info(f"P2データパス: {DEFAULT_CONFIG['p2_csv_path']}")
+    logger.info(f"P3データパス: {DEFAULT_CONFIG['p3_csv_path']}")
+
+    # 明示的にファイルの存在確認
+    if not os.path.exists(DEFAULT_CONFIG['p2_csv_path']):
+        logger.error(f"P2ファイルが見つかりません: {DEFAULT_CONFIG['p2_csv_path']}")
+    if not os.path.exists(DEFAULT_CONFIG['p3_csv_path']):
+        logger.error(f"P3ファイルが見つかりません: {DEFAULT_CONFIG['p3_csv_path']}")
+
+    app.run(host='0.0.0.0', port=DEFAULT_CONFIG["web_port"], debug=DEFAULT_CONFIG["debug_mode"])
+```
+
+✅ 起動スクリプト側（start_p1_solo45_Uni.py）の確認
+この修正を活かすには、次のように明示的にファイルパスを指定して起動してください：
+
+python3
+P1_app_simple45_Uni.py \
+  --p2-path /var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv \
+  --p3-path /var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv \
+  --debug
+start_p1_solo45_Uni.py にもこの引数を渡すように記述する必要があります。
+
+🔁 今後の確認ステップ
+上記のように main() を修正
+
+起動時に --p2-path --p3-path を指定
+
+http://192.168.0.1/api/data/latest にアクセスして正しいデータが表示されるか確認
+
+表示があればフロントエンドも正常動作するはずです
+
+## Additional action_Ver.4.54 Debug4
+作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.54 限定とする
+1. start_p1_solo45_Uni.py が「引数ありき」の設計になっている
+起動時にコマンドライン引数（--p2, --p3など）を指定しないと動作しないコードでした。
+
+これはシェルスクリプトや自動起動には不向きです。
+
+✅ 解決策:
+
+main() 内で直接パスやポートを指定するように変更（既に修正済み）→ canvas「Unified Startup Fix」参照
+
+2. P1_app_simple45_Uni.py のグラフAPI（例: /data/temperature）が timestamp を文字列変換しないままJSONにしている可能性
+これが「Unix時刻＝1970年以前（例：2000年→1970年）」のような誤表示になる根本原因となることがあります。
+
+```python
+
+# ✅ 修正ポイントまとめ: 起動時の引数省略に対応するよう main() を書き換え
+
+def main():
+    """Unified version that sets parameters inside the script (no CLI args needed)."""
+    # 設定を直接コードに記載
+    DEFAULT_CONFIG["data_dir"] = "/var/lib/raspap_solo/data"
+    DEFAULT_CONFIG["p2_csv_path"] = os.path.join(DEFAULT_CONFIG["data_dir"], DEFAULT_CONFIG["rawdata_p2_dir"], "P2_fixed.csv")
+    DEFAULT_CONFIG["p3_csv_path"] = os.path.join(DEFAULT_CONFIG["data_dir"], DEFAULT_CONFIG["rawdata_p3_dir"], "P3_fixed.csv")
+    DEFAULT_CONFIG["web_port"] = 80
+    DEFAULT_CONFIG["debug_mode"] = False
+
+    logger.info("統合Webインターフェース（固定設定モード）を起動します")
+    logger.info(f"P2データパス: {DEFAULT_CONFIG['p2_csv_path']}")
+    logger.info(f"P3データパス: {DEFAULT_CONFIG['p3_csv_path']}")
+
+    # ファイルの存在チェック
+    if not os.path.exists(DEFAULT_CONFIG['p2_csv_path']):
+        logger.error(f"P2ファイルが見つかりません: {DEFAULT_CONFIG['p2_csv_path']}")
+    if not os.path.exists(DEFAULT_CONFIG['p3_csv_path']):
+        logger.error(f"P3ファイルが見つかりません: {DEFAULT_CONFIG['p3_csv_path']}")
+
+    app.run(host='0.0.0.0', port=DEFAULT_CONFIG["web_port"], debug=DEFAULT_CONFIG["debug_mode"])
+
+if __name__ == "__main__":
+    main()
+```
+
+✅ 解決策（再確認）:
+df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')  # 日時変換
+df = df.dropna(subset=['timestamp'])  # NaT除去
+df['timestamp'] = df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')  # 明示的な文字列変換
+3. start_p1_solo45_Uni.py → 起動後のログ確認が難しい
+logger設定はされていますが、Web UI上に表示されないため起動後に何が起きてるか分かりにくい
+✅ 解決策:
+Webページに /api/log/latest のような簡易的ログ確認APIを用意すると便利なので作成する
+4. Uniバージョンにしたことでセンサーデータの「保存」や「収集」が止まっている可能性
+P1_data_collector_solo45.py が常駐していなかったらCSVが更新されず、表示がされません。
+✅ 確認方法:
+ps -ef | grep data_collector
+これの対策も実施する
+From the described symptoms (“no graph displayed on the Web UI,” “latest data is empty,” “no connection status shown”), the root causes should be investigated and addressed accordingly.
+Focus all work within the following directory only:
+G:\RPi-Development\RaspPi5_APconnection\Ver4.54\p1_software_solo45
+
+Two possible root causes are assumed:
+(1) The Web UI (P1_app_simple45_Uni.py) is not properly reading data (CSV or status files)
+(2) The web interface is not starting up correctly
+
+Key Points to Check
+1. Web Interface Startup / Process Execution Issues
+Since the Flask server is launched as a separate process:
+
+Are the correct Python executable from the virtual environment (VENV_PYTHON) and the script path (WEB_INTERFACE_SCRIPT) being referenced?
+
+Are there any exceptions or startup errors in the standard output or logs?
+
+Is the web server process actually running? (Use ps aux | grep python to check)
+
+Reference: start_web_interface in start_p1_solo45_Uni.py
+
+2. Absolute CSV Paths and Read Permissions for the Web UI
+In P1_app_simple45_Uni.py:
+
+Is the path passed with --data-dir different from the actual data directory (e.g., /var/lib/raspap_solo/data/RawData_P2)?
+
+Does the web UI process have read permissions for the CSV files?
+
+Do the CSV file names (e.g., P2_fixed.csv, P3_fixed.csv) match the expected names in the reading function?
+
+Check the read_csv_data function.
+
+3. Exceptions or Empty Data on the Flask App/API Side
+Functions like read_csv_data, get_latest_data, get_graph_data, and get_connection_status should be examined:
+
+Are exceptions being caught when the CSV cannot be read, causing empty data to be returned silently?
+
+Are relevant logs recorded? (Check outputs from logger)
+
+In the browser’s network tab:
+
+Are API responses such as /api/latest-data returning a valid 200 OK status?
+
+Are the JSON contents empty arrays or null?
+
+Troubleshooting & Recommendations by Cause
+1. If the Web Interface Fails to Start:
+Check for issues in start_web_interface startup logic
+(e.g., incorrect VENV_PYTHON path, missing execution permission, invalid PYTHONPATH, missing dependencies)
+
+Inspect logs via logger.error, or check running processes with ps commands
+
+2. If Data Paths or Filenames Do Not Match:
+Ensure that the directory specified by command-line arguments or config files matches the actual data file location
+
+Recheck path arguments and constants in related functions
+
+3. If There Are File Permission Issues:
+Use ls -l to inspect permissions on /var/lib/raspap_solo/data/
+
+Try reading the file using cat under the web server's user account to verify accessibility
+
+4. If Failures Are Silently Caught and Empty Data Returned:
+If no error appears on screen but the data is empty, this is a classic sign
+
+Check whether any exception details are logged with logger
+
+5. If APIs Return Empty Data:
+Access endpoints like /api/latest-data or /api/graph-info in the browser
+
+See if the response is {} or an empty array — which indicates data was not loaded properly
