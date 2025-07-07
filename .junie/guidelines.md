@@ -1,8 +1,8 @@
 # Raspberry Pi 5 and Pico 2W Standalone Environmental Data Measurement System
 
 ## Project Overview
-This project implements a standalone environmental data measurement system using a Raspberry Pi 5 (P1) as the central hub and two Raspberry Pi Pico 2W devices (P2, P3) as sensor nodes. The system collects environmental data such as temperature, humidity, atmospheric pressure, gas parameters, and CO2 concentration, then visualizes and stores this data for analysis.
-
+- This project implements a standalone environmental data measurement system using a Raspberry Pi 5 (P1) as the central hub and two Raspberry Pi Pico 2W devices (P2, P3) as sensor nodes. The system collects environmental data such as temperature, humidity, atmospheric pressure, gas parameters, and CO2 concentration, then visualizes and stores this data for analysis.
+- Operation Directory is G:\RPi-Development\RaspPi5_APconnection
 ## System Components
 1. **Raspberry Pi 5 (P1)** - Central hub that:
    - Acts as a WiFi access point for P2 and P3
@@ -1362,7 +1362,7 @@ if 'timestamp' in df.columns:
 
 ## Additional action_Ver.4.52 Debug2
 下記対応を実施する。データはG:\RPi-Development\RaspPi5_APconnection\Ver4.52内で実行する
- 問題の本質（2000年1月1日表示）[P1_app_simple45.py](../RaspPi5_APconnection/Ver4.52/p1_software_solo45/web_interface/P1_app_simple45.py)
+ 問題の本質（2000年1月1日表示）[P1_app_simple45.py](../RaspPi5_APconnection_NGver/Ver4.52/p1_software_solo45/web_interface/P1_app_simple45.py)
 plotly.js によるグラフ表示が "x" 軸のタイムスタンプを "数値（エポック）" と誤認識しています。
 Flask 側 /data/<parameter> API が返す JSON に含まれる "timestamp" が正しくフォーマットされていない可能性があります。
 
@@ -1902,6 +1902,8 @@ http://192.168.0.1/api/data/latest にアクセスして正しいデータが表
 
 表示があればフロントエンドも正常動作するはずです
 
+---
+
 ## Additional action_Ver.4.54 Debug4
 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.54 限定とする
 1. start_p1_solo45_Uni.py が「引数ありき」の設計になっている
@@ -2028,3 +2030,216 @@ Check whether any exception details are logged with logger
 Access endpoints like /api/latest-data or /api/graph-info in the browser
 
 See if the response is {} or an empty array — which indicates data was not loaded properly
+
+--- 
+# Additional action_Ver.4.6 Debug
+
+1. 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.60Debug
+2. 構成されているconnection_monitor, data_collection. web_interfaceの.pyファイルを各機能別に複数ファイルに分割し整備性を改善する。
+3. ファイルの内部はすべて英語でなるべく機能の記載を行う。
+4. 別途Ver4.6 Debugディレクトリ内にDocumentationディレクトリを作成し、内部構造を詳細に記した文章を作成する。これは日本語と英語の両方を作成する。
+5. 使用方法等も同じくDocumentationに作成する。
+
+# Additional action_Ver.4.6 Debug Error repair1
+1. 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.60Debug
+2. エラーメッセージを確認すると、モジュールの相対インポートに問題があることがわかります。
+``` 
+ImportError: attempted relative import with no known parent package
+```
+このエラーは、ファイルを直接実行した際に、相対インポート（`.config`のような形式）を使用しようとしているために発生しています。Pythonでは、ファイルを直接実行する場合（`python filename.py`のように）、そのファイルは「トップレベルモジュール」として扱われ、相対インポートが使えません。 `P1_wifi_monitor_solo.py`
+具体的には、以下の行で問題が発生しています：
+from .config import DEFAULT_CONFIG, ensure_log_directory
+対策として相対importを絶対importに変更する
+例えば下記のようにする。
+```python
+"""
+Raspberry Pi 5 WiFi Connection Monitor for Solo Version 4.0
+Version: 4.0.0-solo
+
+This module provides a compatibility layer for the refactored connection monitor.
+It imports and uses the refactored modules to maintain compatibility with the
+start_p1_solo.py script.
+"""
+
+import os
+import sys
+import time
+import json
+import socket
+import argparse
+import subprocess
+import threading
+import logging
+import datetime
+import re
+from pathlib import Path
+from flask import Flask, jsonify, request
+
+# 相対インポートを絶対インポートに変更
+from connection_monitor.config import DEFAULT_CONFIG, ensure_log_directory
+from connection_monitor.monitor import WiFiMonitor
+from connection_monitor.utils.console import print_connection_status
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+# For backwards compatibility
+def main():
+    """Main function to parse arguments and start the WiFi monitor."""
+    from connection_monitor.main import main as refactored_main
+    refactored_main()
+
+if __name__ == "__main__":
+    main()
+
+
+```
+
+# Additional action_Ver.4.6 Debug 2
+0. 変更点は日本語、英語のドキュメントとして明示すること。また仕様手順などが変更されてた場合なども初心者向けに丁寧に構造や使用方法を解説すること。
+1. 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.60Debug
+2. G:\RPi-Development\RaspPi5_APconnection\Ver4.60Debug\p1_software_solo405\data_collection 内部の構成を整理特に __init__.py が多く明確に機能分割されていないため再度考察して構成をわかりやすく、整備性を高める。
+3. G:\RPi-Development\RaspPi5_APconnection\Ver4.60Debug\p1_software_solo405\web_interface についても同様に機能別に.pyファイルを作成して整理する
+4. 実仕様に耐えられるよう、相対importではなく絶対importで構築すること。
+5. G:\RPi-Development\RaspPi5_APconnection\Ver4.60Debug\p1_software_solo405\web_interface についても機能分離して整備性を上げる
+
+---
+
+# Additional action_Ver.4.6 Debug 2
+0. 変更点は日本語、英語のドキュメントとして明示すること。また仕様手順などが変更されてた場合なども初心者向けに丁寧に構造や使用方法を解説すること。
+1. 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.61Debug
+2. start_p1_solo.pyとconnection_monitor, data_collection, web_interfaceの連携が正しく実施されているか確認修正する。すなわち、実働させる際start_p1_solo.pyを実行するだけで正しく全体が機能すること。
+3. Documentationを整理して最新状況に合わせる、とくにインストールや起動方法は初心者向けに丁寧に説明する。
+4. Project_Structureはより丁寧に今の最新状況に合わせて日本語版、英語版ともに修正する。
+
+---
+
+# Additional action_Ver.4.61 Debug 3
+0. 変更点は日本語、英語のドキュメントとして明示すること。また仕様手順などが変更されてた場合なども初心者向けに丁寧に構造や使用方法を解説すること。
+1. 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.61Debug
+2. エラーが発生しているため対策を行う。
+
+```bash
+2025-07-07 11:42:17,337 - WARNING - Failed to import refactored modules: No module named 'p1_software_solo405'
+2025-07-07 11:42:17,337 - INFO - Falling back to original implementation
+Traceback (most recent call last):
+  File "/home/pi/RaspPi5_APconnection/Ver4.61Debug/p1_software_solo405/data_collection/P1_data_collector_solo.py", line 592, in <module>
+    main()
+  File "/home/pi/RaspPi5_APconnection/Ver4.61Debug/p1_software_solo405/data_collection/P1_data_collector_solo.py", line 559, in main
+    config = DEFAULT_CONFIG.copy()
+             ^^^^^^^^^^^^^^
+NameError: name 'DEFAULT_CONFIG' is not defined
+```
+
+3. エラーの主な原因は：
+   1. Pythonパッケージのインポートパスの問題 、Pythonがモジュールを見つけられない問題は、通常以下のいずれかが原因と考えられる
+         - PYTHONPATHが正しく設定されていない
+         - ディレクトリ構造が変更された
+         - ファイルが不足している `__init__.py`
+
+   2. 変数が定義されていない部分がある `DEFAULT_CONFIG`
+   ファイル内で が定義されていないか、または定義されている場所より前に使用されています。 `P1_data_collector_solo.py``DEFAULT_CONFIG`
+ 
+
+---
+
+# Additional action_Ver.4.62 Debug
+0. 変更点は日本語、英語のドキュメントとして明示すること。また仕様手順などが変更されてた場合なども初心者向けに丁寧に構造や使用方法を解説すること。
+1. 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.62Debug
+2. G:\RPi-Development\RaspPi5_APconnection\Ver4.62Debug\p1_software_solo405\data_collection\P1_data_collector_solo.pyを使用停止するため、機能をすべてG:\RPi-Development\RaspPi5_APconnection\Ver4.62Debug\p1_software_solo405\data_collection\P1_data_collector_solo_new.pyで実現できるように調整する。
+3. その後P_data_collector_solo.pyは削除する。
+4. P1_data_collector_solo_new.pyは下記のフォルダを参照することを前提とする。注意点は単独ファイルで処理しないこと（整備性が悪化するため）
+   1. G:\RPi-Development\RaspPi5_APconnection\Ver4.62Debug\p1_software_solo405\data_collection\api
+   2. G:\RPi-Development\RaspPi5_APconnection\Ver4.62Debug\p1_software_solo405\data_collection\network
+   3. G:\RPi-Development\RaspPi5_APconnection\Ver4.62Debug\p1_software_solo405\data_collection\processing
+   4. G:\RPi-Development\RaspPi5_APconnection\Ver4.62Debug\p1_software_solo405\data_collection\storage
+
+---
+
+# Additional action_Ver.4.62 Debug2
+0. 変更点は日本語、英語のドキュメントとして明示すること。また仕様手順などが変更されてた場合なども初心者向けに丁寧に構造や使用方法を解説すること。
+1. 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.62Debug
+
+下記のエラーが現在出ているため。対策を実施する。
+- Failed to import refactored modules from p1_software_solo405 package: No module named 'p1_software_solo405' 
+- Failed to import refactored modules from relative path: No module named 'p1_software_solo405' 
+- Cannot continue without required modules
+リファクタリング版の[P1_app_solo_new.py](../RaspPi5_APconnection/Ver4.61Debug/p1_software_solo405/web_interface/P1_app_solo_new.py)
+を正しく使うためにモジュールのインポートパスの問題を解決する必要があります
+
+- エラーログから判断すると、現在のシステムはを使用しようとしていますが、モジュールの読み込みに失敗しています。このリファクタリングされたモジュール構造を正しく使用できるよう、Pythonのモジュールパスやパッケージ構造の問題を解決する必要があります。 `P1_app_solo_new.py``p1_software_solo405`
+スクリプトは、またはのいずれかを起動するためのユニファイドスタートアップスクリプトですが、現在は新しいリファクタリング版を使用しようとしています。 `start_p1_solo.py``P1_app_solo.py``P1_app_solo_new.py`
+
+---
+
+# Additional action_Ver.4.62 Debug3
+0. 変更点は日本語、英語のドキュメントとして明示すること。また仕様手順などが変更されてた場合なども初心者向けに丁寧に構造や使用方法を解説すること。
+1. 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.62Debug
+
+---
+
+### 4.62はDatacollector soloを削除して動かなくなったのでキャンセル。
+### 4.61をベースとした4.65を作成して対応する。
+
+---
+
+# Additional action_Ver.4.62 Debug3
+作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.65Debug
+下記の対応を実施する。
+方針はG:\RPi-Development\RaspPi5_APconnection\Ver4.65Debug\p1_software_solo405\web_interface\StructureDocument\P1_app_solo_update_impact_report.md を参考にすること
+
+## Recommended Actions
+The following actions are recommended:
+
+1. Resolve Python Package Import Path Issues
+This can be resolved using one of the following methods:
+
+a. Set the PYTHONPATH environment variable to add the directory containing the p1_software_solo405 package to the Python path:
+
+export PYTHONPATH=/path/to/RaspPi5_APconnection/Ver4.65Debug:$PYTHONPATH
+b. Modify the import statements in P1_app_solo_new.py to use relative imports:
+```python
+
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from web_interface.main import WebInterface, main as refactored_main
+from web_interface.config import DEFAULT_CONFIG
+```
+
+3. Fix Command Line Argument Handling
+Modify the main() function in P1_app_solo_new.py to pass the parsed arguments to refactored_main():
+```python
+
+def main():
+    """Main entry point for the web interface."""
+    parser = argparse.ArgumentParser(description='Web Interface')
+    parser.add_argument('--port', type=int, help='Port to listen on')
+    parser.add_argument('--data-dir', type=str, help='Data directory')
+    parser.add_argument('--debug', action='store_true', help='Enable debug mode')
+    args = parser.parse_args()
+    
+    # Create a list of arguments to pass to refactored_main
+    refactored_args = []
+    if args.port:
+        refactored_args.extend(['--port', str(args.port)])
+    if args.data_dir:
+        refactored_args.extend(['--data-dir', args.data_dir])
+    if args.debug:
+        refactored_args.append('--debug')
+    
+    # Call the refactored main function with the parsed arguments
+    sys.argv = [sys.argv[0]] + refactored_args
+    refactored_main()
+```
+
+3. Gradual Migration and Testing
+    Rather than migrating completely at once, a phased approach is recommended:
+
+    a. First, test using P1_app_solo_new.py in a development environment to ensure all functionality works correctly.
+
+    b. Next, use P1_app_solo_new.py on a subset of production systems to evaluate performance and stability under actual operating conditions.
+
+    c. If there are no issues, migrate all systems to P1_app_solo_new.py.
+
+    d. Keep P1_app_solo.py for a while after migration, so you can revert if necessary.
