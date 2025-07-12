@@ -1,0 +1,125 @@
+venv Installed
+///
+source ~/envmonitor-venv/bin/activate
+///
+
+If we want to logout venv.
+input below 
+///
+deactivate
+///
+
+:)
+
+(envmonitor-venv) pi@raspberrypi:~/RaspPi5_APconnection $ pip list
+
+Package          Version
+---------------- -----------
+bidict           0.23.1
+blinker          1.9.0
+click            8.2.1
+Flask            3.1.1
+Flask-SocketIO   5.5.1
+h11              0.16.0
+itsdangerous     2.2.0
+Jinja2           3.1.6
+MarkupSafe       3.0.2
+narwhals         1.44.0
+numpy            2.3.1
+packaging        25.0
+pandas           2.3.0
+pip              23.0.1
+plotly           6.2.0
+python-dateutil  2.9.0.post0
+python-engineio  4.12.2
+python-socketio  5.13.0
+pytz             2025.2
+setuptools       66.1.1
+simple-websocket 1.1.0
+six              1.17.0
+tzdata           2025.2
+Werkzeug         3.1.3
+wsproto          1.2.0
+
+
+
+Access point configuration completed successfully!
+SSID: RaspberryPi5_AP
+Password: raspberry
+IP Address: 192.168.0.1
+### セットアップ手順
+1. アクセスポイントセットアップディレクトリに移動します：
+   ```bash
+   cd ~/RaspPi5_APconnection/p1_software/ap_setup
+   ```
+
+2. セットアップスクリプトを実行可能にします：
+   ```bash
+   chmod +x ap_setup.py
+   ```
+
+3. **自動設定（推奨）**：
+   USBドングルの有無を自動検出し、最適なモードを設定します：
+   ```bash
+   sudo python3 ap_setup.py --auto-config
+   ```
+
+   このコマンドは以下の処理を行います：
+   - USBドングルが検出された場合：内蔵WiFiをAPモードに設定し、USBドングルをクライアントモードに設定します
+   - USBドングルが検出されない場合：内蔵WiFiをAPモードに設定します
+
+4. **手動設定（詳細設定が必要な場合）**：
+   APモードを手動で設定する場合は以下のコマンドを実行します：
+   ```bash
+   sudo python3 ap_setup.py --configure
+   ```
+
+   画面の指示に従ってセットアップを完了します。
+
+5. セットアップが完了したら、Raspberry Piを再起動します：
+   ```bash
+   sudo reboot
+   ```
+
+5. サービスを有効にして起動します：
+   ```bash
+   sudo systemctl enable data_collector.service
+   sudo systemctl start data_collector.service
+   ```
+
+6. サービスのステータスを確認します：
+   ```bash
+   sudo systemctl status data_collector.service
+   ```
+4. サービスを有効にして起動します：
+   ```bash
+   sudo systemctl enable web_interface.service
+   sudo systemctl start web_interface.service
+   ```
+
+5. サービスのステータスを確認します：
+   ```bash
+   sudo systemctl status web_interface.service
+   ```
+
+4. サービスを有効にして起動します：
+   ```bash
+   sudo systemctl enable wifi_monitor.service
+   sudo systemctl start wifi_monitor.service
+   ```
+
+5. サービスのステータスを確認します：
+   ```bash
+   sudo systemctl status wifi_monitor.service
+
+(envmonitor-venv) pi@raspberrypi://home/pi/RaspPi5_APconnection/Ver4.5/p1_software_solo45 $ sudo python3 start_p1_solo45.py 
+2025-07-06 18:58:58,414 - INFO - アクセスポイントのセットアップを開始しています...
+2025-07-06 18:58:58,434 - INFO - アクセスポイントを設定しています...
+/home/pi/envmonitor-venv/bin/python3: can't open file '/home/pi/RaspPi5_APconnection/Ver4.5/p1_software_solo45/ap_setup/P1_ap_setup_solo45.py': [Errno 2] No such file or directory
+2025-07-06 18:58:58,455 - ERROR - アクセスポイントのセットアップに失敗しました: Command '['/home/pi/envmonitor-venv/bin/python3', '/home/pi/RaspPi5_APconnection/Ver4.5/p1_software_solo45/ap_setup/P1_ap_setup_solo45.py', '--configure']' returned non-zero exit status 2.
+2025-07-06 18:58:58,456 - ERROR - アクセスポイントのセットアップに失敗しました、終了します
+2025-07-06 18:58:58,457 - INFO - プロセスをクリーンアップしています...
+(envmonitor-venv) pi@raspberrypi://home/pi/RaspPi5_APconnection/Ver4.5/p1_software_solo45 $ 
+
+
+

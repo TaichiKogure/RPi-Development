@@ -1,0 +1,54 @@
+  File "/home/pi/RaspPi5_APconnection/Ver4.45/p1_software_solo44/data_collection/P1_data_collector_solo44.py", line 420
+    client_socket.sendall(b'{"status": "error", "message": "データの保存に失敗しました"}')
+                                                                            ^
+SyntaxError: bytes can only contain ASCII literal characters
+2025-07-06 15:56:02,844 - INFO - Connection data for P2: {'timestamp': '2025-07-06 15:56:01', 'online': False, 'signal_strength': None, 'noise_level': None, 'snr': None, 'ping_time': None}
+2025-07-06 15:56:03,845 - INFO - Connection data for P3: {'timestamp': '2025-07-06 15:56:01', 'online': False, 'signal_strength': None, 'noise_level': None, 'snr': None, 'ping_time': None}
+2025-07-06 15:56:08,850 - WARNING - Could not find noise level for channel 6
+2025-07-06 15:56:08,921 - INFO - Adding P2 data for temperature: 2012 points, range: 24.79836 - 36.02629
+2025-07-06 15:56:08,942 - INFO - Adding P3 data for temperature: 1381 points, range: 27.20832 - 39.38586
+2025-07-06 15:56:08,958 - INFO - Adding P2 data for co2: 2012 points, range: 421 - 766
+2025-07-06 15:56:08,998 - INFO - Adding P2 data for absolute_humidity: 2012 points, range: 13.0 - 22.07
+2025-07-06 15:56:09,003 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /data/temperature?days=1&show_p2=true&show_p3=true HTTP/1.1" 200 -
+2025-07-06 15:56:09,033 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /api/connection/status HTTP/1.1" 200 -
+2025-07-06 15:56:09,038 - INFO - Adding P3 data for co2: 1381 points, range: 636 - 809
+2025-07-06 15:56:09,067 - INFO - Adding P2 data for humidity: 2012 points, range: 49.77236 - 71.46115
+2025-07-06 15:56:09,078 - INFO - Adding P3 data for absolute_humidity: 1381 points, range: 12.61 - 18.93
+2025-07-06 15:56:09,080 - INFO - Adding P2 data for gas_resistance: 2012 points, range: 4893 - 12003
+2025-07-06 15:56:09,101 - INFO - Adding P3 data for humidity: 1381 points, range: 30.73977 - 55.30675
+2025-07-06 15:56:09,120 - INFO - Adding P3 data for gas_resistance: 1381 points, range: 9928 - 13302
+2025-07-06 15:56:09,125 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /data/absolute_humidity?days=1&show_p2=true&show_p3=true HTTP/1.1" 200 -
+2025-07-06 15:56:09,126 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /data/co2?days=1&show_p2=true&show_p3=true HTTP/1.1" 200 -
+2025-07-06 15:56:09,154 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /data/humidity?days=1&show_p2=true&show_p3=true HTTP/1.1" 200 -
+2025-07-06 15:56:09,165 - INFO - Adding P2 data for pressure: 2012 points, range: 995.611 - 998.3777
+2025-07-06 15:56:09,179 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /data/gas_resistance?days=1&show_p2=true&show_p3=true HTTP/1.1" 200 -
+2025-07-06 15:56:09,192 - INFO - Adding P3 data for pressure: 1381 points, range: 996.7824 - 998.278
+2025-07-06 15:56:09,226 - INFO - 192.168.0.1 - - [06/Jul/2025 15:56:09] "GET /data/pressure?days=1&show_p2=true&show_p3=true HTTP/1.1" 200 -
+2025-07-06 15:56:09,855 - INFO - Connection data for P2: {'timestamp': '2025-07-06 15:56:08', 'online': False, 'signal_strength': None, 'noise_level': None, 'snr': None, 'ping_time': None}
+2025-07-06 15:56:10,860 - INFO - Connection data for P3: {'timestamp': '2025-07-06 15:56:08', 'online': False, 'signal_strength': None, 'noise_level': None, 'snr': None, 'ping_time': None}
+2025-07-06 15:56:12,138 - WARNING - data_collector が予期せず終了しました (終了コード: 1)、再起動しています...
+2025-07-06 15:56:12,139 - INFO - データ収集サービスを開始しています...
+2025-07-06 15:56:12,139 - INFO - データ収集サービスが開始されました (PID: 327875)
+2025-07-06 15:56:12,139 - INFO - P2とP3用のデータディレクトリが存在することを確認しました
+
+===== P1 サービスステータス (Ver 4.44) =====
+data_collector: ✗ 停止中 (終了コード: 1)
+web_interface: ✓ 正常稼働中 (PID: 326805)
+connection_monitor: ✓ 正常稼働中 (PID: 326806)
+
+一部のサービスに問題があります。再起動を試みています。
+=============================
+
+  File "/home/pi/RaspPi5_APconnection/Ver4.45/p1_software_solo44/data_collection/P1_data_collector_solo44.py", line 420
+    client_socket.sendall(b'{"status": "error", "message": "データの保存に失敗しました"}')
+                                                                            ^
+SyntaxError: bytes can only contain ASCII literal characters
+^C
+WiFiモニターを停止しています...
+2025-07-06 15:56:14,029 - INFO - WiFi monitor stopped
+2025-07-06 15:56:14,029 - INFO - シグナル 2 を受信しました、シャットダウンします...
+WiFiモニターが停止しました
+2025-07-06 15:56:14,029 - INFO - プロセスをクリーンアップしています...
+2025-07-06 15:56:14,030 - INFO - web_interface を終了しています (PID: 326805)...
+2025-07-06 15:56:14,037 - INFO - connection_monitor を終了しています (PID: 326806)...
+2025-07-06 15:56:14,038 - INFO - プロセスをクリーンアップしています...
