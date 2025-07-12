@@ -2243,3 +2243,551 @@ def main():
     c. If there are no issues, migrate all systems to P1_app_solo_new.py.
 
     d. Keep P1_app_solo.py for a while after migration, so you can revert if necessary.
+
+# Additional action_Ver.4.62 Debug4
+❗ 原因1: Flask アプリのルートが index.html を返していない
+index.html は存在していますが、Flask 側の / ルートで render_template("index.html") を返す処理があるか確認します。
+
+📄 該当箇所：main.py
+python
+コピーする
+編集する
+@self.app.route('/')
+def index():
+    return render_template('index.html')
+このような記述があるか確認してください。
+
+✅ ある場合：次に確認すべきはテンプレートフォルダのパス
+❌ ない場合：このルートを追加してください。
+
+✅ 解決策：
+
+index.html を web_interface/templates/index.html に配置すること
+
+または create_templates() を main.py 側に呼び出し統合して、起動時に自動生成する.
+
+エラーとして下記もあり
+    Failed to initialize WiFi monitor: 'log_dir'
+start_p1_solo.py の DEFAULT_CONFIG に追加
+
+✅ まとめ：確認と修正すべきポイント
+項目	対応内容
+/ ルートで index.html を返しているか	main.py に @app.route('/') を確認/追加
+templates/ のパスが Flask に合っているか	web_interface/templates/index.html に配置
+log_dir エラー	DEFAULT_CONFIG に "log_dir": "/var/log" を追加
+HTML内の /api/latest-data-table などのルート	Flask側でそのルートを @app.route(...) で定義済みか確認
+
+# Additional action_Ver.4.62 Debug5
+- 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.65Debug
+下記の対応を実施する。
+
+## 問題の核心
+NameError: name 'logger' is not defined
+これは main.py の以下のブロックにおいて、logger を使おうとしている時点でまだ定義されていないためです：
+```python
+try:
+    from p1_software_solo405.web_interface.P1_app_solo import create_templates
+    logger.info("Successfully imported create_templates from P1_app_solo")
+```
+対策例は下記
+```python
+import logging
+logger = logging.getLogger(__name__)
+
+try:
+    from p1_software_solo405.web_interface.P1_app_solo import create_templates
+    logger.info("Successfully imported create_templates from P1_app_solo")
+except ImportError as e:
+    ...
+```
+
+# Additional action_Ver.4.62 Debug6
+- 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.65Debug
+下記の対応を実施する。
+- 原因：Flask テンプレートに refresh_interval を渡していない
+- 対策（main.py修正）
+main.py の WebInterface._register_routes() の中で次のように修正してください：
+```python
+@self.app.route('/')
+def index():
+    return render_template('index.html', refresh_interval=self.config.get('refresh_interval', 10))
+
+```
+
+# Additional action_Ver.4.62 Debug7
+- 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.65Debug
+下記の対応を実施する。
+- 
+- 原因：1. /api/latest のルートが Flask アプリに未定義
+- 対策1. /api/latest を返すルート（仮実装例）
+Flask の main.py または routes.py に次のルートを追加
+```python
+@app.route('/api/latest')
+def latest():
+    import json
+    try:
+        # 仮：直近のデータファイルを読み込んで返す
+        with open("/var/lib/raspap_solo/data/latest_data.json") as f:
+            data = json.load(f)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+```
+※ 実際の構造に応じて data_collector 側で生成されている latest_data.json などに合わせてください。
+
+
+- 原因：2. /dashboard のルートも未定義
+- 対策：２ /dashboard を返すルート
+```python
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html')
+
+```
+web_interface/templates/dashboard.html が存在していることが前提なので確認すること。
+
+
+# Additional action_Ver.4.62 Debug8
+- 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.65Debug
+下記の対応を実施する。
+
+- 問題 dashboard.html テンプレート内で次のように refresh_interval 変数を使っています
+}, {{ refresh_interval * 1000 }});
+しかし、Flask 側の /dashboard ルートで render_template('dashboard.html') としており、refresh_interval をテンプレートに渡していないため、
+Jinja2 によって 'refresh_interval' is undefined エラーが出ています。
+
+- 対策 main.py の /dashboard ルートを修正
+
+```python
+@app.route('/dashboard')
+def dashboard():
+    return render_template('dashboard.html', refresh_interval=self.config.get('refresh_interval', 10))
+
+```
+##重要リクエスト
+- 他にも render_template() で変数を渡し忘れている箇所があれば同様の対策が必要になるためファイル全体を調査して同等の問題があれば対策する。
+
+
+# Additional action_Ver.4.62 Debug9
+
+- 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.65Debug
+下記の対応を実施する。
+
+- 問題 （センサーデータが更新されない原因）
+
+- GET /api/device/P2 HTTP/1.1" 404 - 
+- GET /api/device/P3 HTTP/1.1" 404 -
+このエラーが意味するのは、フロントエンド（JavaScript）側がセンサー情報を取得するために
+/api/device/P2 や /api/device/P3 にアクセスしているが、
+Flask 側にこのルートが定義されていない（= 404 Not Found）
+- 
+- 対策Flask の routes.py または APIRoutes クラスに次のようなルートを追加してください：
+```python
+
+@app.route('/api/device/<device_id>')
+def get_device_data(device_id):
+    data = self.data_manager.get_latest_device_data(device_id.upper())
+    if data:
+        return jsonify(data)
+    else:
+        return jsonify({'error': 'Device not found'}), 404
+```
+device_id（例：P2, P3）をパラメータで受け取り、
+DataManager 経由で最新データを取得、
+あればJSONで返し、なければ404エラー。
+
+self.data_manager.get_latest_device_data(...) が P2, P3 のデータを管理している必要があります。
+もしこの関数が存在しない場合、代わりに data_collector が出力している JSON ファイルから読み込む関数を追加する必要があるので対応する。
+
+##重要リクエスト
+- ダッシュボードなどの画面から GET /api/graphs?... が呼ばれた際に、センサー（例：P2/P3）のCSVファイルの内容を返すAPIを Flask 側で定義する。
+routes.py や main.py に以下のような構造を追加するが、以下の処理を加えることが望ましいです：
+1. CSVをJSONに変換して構造化（例：日時→温度/湿度データ）
+2. days=N に応じて過去N日分のファイルを選別 
+3. ファイルの整合性（存在チェック、フォーマットチェック）など
+```python
+@app.route('/api/graphs')
+def get_graph_data():
+    from flask import request
+    import os
+
+    # クエリパラメータ取得（初期値あり）
+    days = request.args.get('days', default=1, type=int)
+    show_p2 = request.args.get('show_p2', default='true') == 'true'
+    show_p3 = request.args.get('show_p3', default='true') == 'true'
+
+    result = {}
+    data_dir = '/var/lib/raspap_solo/data/'  # CSV格納ディレクトリ（既存と合わせて調整）
+
+    try:
+        if show_p2:
+            p2_path = os.path.join(data_dir, 'P2.csv')
+            if os.path.exists(p2_path):
+                with open(p2_path) as f:
+                    result['P2'] = f.read()
+        if show_p3:
+            p3_path = os.path.join(data_dir, 'P3.csv')
+            if os.path.exists(p3_path):
+                with open(p3_path) as f:
+                    result['P3'] = f.read()
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+```
+
+# Additional action_Ver.4.62 Debug9
+- 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.65Debug
+下記の対応を実施する。
+- 問題 センサデータが自動更新されない、グラフがかかれない。 
+1. グラフについて/api/graphs は graph_generator.generate_graph_data() を通じて構造化されたデータを返すように修正
+```python
+# /api/graphs の実装（GraphGenerator使用）
+@app.route('/api/graphs')
+def get_graph_data():
+    from flask import request
+    days = request.args.get('days', default=1, type=int)
+    show_p2 = request.args.get('show_p2', default='true') == 'true'
+    show_p3 = request.args.get('show_p3', default='true') == 'true'
+
+    try:
+        # GraphGenerator経由で整形済みデータ取得
+        result = graph_generator.generate_graph_data(days=days, show_p2=show_p2, show_p3=show_p3)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Graph data generation failed: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+```
+2. ダッシュボード上のセンサーデータとグラフの**定期更新（自動リフレッシュ）**を実現する
+現状dashboard.html の loadGraphs() が /api/data/... にリクエストしており、個別エンドポイントに依存していた
+しかし現在は /api/graphs に一本化されているため、実際に更新されていない
+更新間隔（タイマー）は動いていても、描画対象のレスポンス構造に合っていない
+
+- 自動更新用の統一グラフローダー loadGraphs() を以下のように修正：
+/api/graphs から一括取得
+P2, P3 含むセンサーデータから Plotly で描画
+refresh_interval で全体を10秒ごとに更新
+
+```
+<script>
+    // Function to load latest data
+    function loadLatestData() {
+        $.get('/api/latest-data-table', function(data) {
+            $('#latest-data-container').html(data);
+        });
+    }
+
+    // Function to load connection status
+    function loadConnectionStatus() {
+        $.get('/api/connection-status-table', function(data) {
+            $('#connection-status-container').html(data);
+        });
+    }
+
+    // Function to load graphs (updated to hit unified API)
+    function loadGraphs() {
+        const days = $('#days-select').val() || 1;
+        const showP2 = $('#show-p2').is(':checked');
+        const showP3 = $('#show-p3').is(':checked');
+
+        $.get(`/api/graphs?days=${days}&show_p2=${showP2}&show_p3=${showP3}`, function(data) {
+            const params = ["temperature", "humidity", "absolute_humidity", "co2", "pressure", "gas_resistance"];
+            params.forEach(param => {
+                const traces = [];
+                ["P2", "P3"].forEach(device => {
+                    if (data[device] && data[device][param]) {
+                        traces.push({
+                            x: data[device].timestamp,
+                            y: data[device][param],
+                            name: device,
+                            mode: 'lines+markers',
+                            type: 'scatter'
+                        });
+                    }
+                });
+                const layout = { title: param.replace("_", " "), xaxis: { title: 'Time' }, yaxis: { title: param } };
+                Plotly.newPlot(`${param.replace('_', '-')}-graph`, traces, layout);
+            });
+        });
+    }
+
+    // Initial load
+    $(document).ready(function() {
+        loadLatestData();
+        loadConnectionStatus();
+        loadGraphs();
+
+        // Set up refresh intervals
+        setInterval(() => {
+            loadLatestData();
+            loadConnectionStatus();
+            loadGraphs();
+        }, 10000);
+
+        // Set up event listeners
+        $('#days-select, #show-p2, #show-p3').change(function() {
+            loadGraphs();
+        });
+    });
+</script>
+
+
+```
+
+# Additional action_Ver.4.62 Debug10
+
+- 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.65Debug
+下記の対応を実施する。
+
+- 現状問題 
+  - dashboard.html の JavaScript は /api/graphs にアクセスして Plotly にデータを渡そうとしている。しかし /api/graphs?... を開いても 空データや想定外の形式が返ってきている。
+  ログには Error generating graph data: No module named 'web_interface' とあり、GraphGenerator 内部でのエラーが発生している。
+
+原因分析
+🔹 原因1：GraphGenerator の中で import パスが不正
+- Error generating graph data: No module named 'web_interface'
+→ graph_generator.py 内で from web_interface... のように相対ではなくルートから参照している場合、PYTHONPATH が通っていないと失敗します。
+
+-  原因2：generate_graph_data() が空データか想定外の形式を返している
+JS 側は data.P2.timestamp などを使っているので、下記のようなJSONを返す必要があります：
+
+```json
+{
+  "P2": {
+    "timestamp": ["2025-07-07T18:00:00", ...],
+    "temperature": [30.1, 30.3, ...],
+    ...
+  },
+  "P3": {
+    ...
+  }
+}
+```
+→ これが None や空リスト [] の場合、Plotly は描画できません。
+
+対策ステップ graph_generator.py の修正
+```python
+# GraphGenerator.generate_graph_data の戻り値の構造を修正
+# 期待されるのは {"P2": {"timestamp": [...], "temperature": [...], ...}, "P3": {...}} 形式
+
+from datetime import datetime, timedelta
+import pandas as pd
+
+class GraphGenerator:
+    def __init__(self, data_dir):
+        self.data_dir = data_dir
+
+    def generate_graph_data(self, days=1, show_p2=True, show_p3=True):
+        result = {}
+        cutoff = datetime.now() - timedelta(days=days)
+
+        def load_data(device_id):
+            try:
+                df = pd.read_csv(f"{self.data_dir}/{device_id}.csv")
+                df['timestamp'] = pd.to_datetime(df['timestamp'])
+                df = df[df['timestamp'] > cutoff]
+                return df
+            except Exception as e:
+                return None
+
+        for device_id in ['P2', 'P3']:
+            if (device_id == 'P2' and show_p2) or (device_id == 'P3' and show_p3):
+                df = load_data(device_id)
+                if df is not None:
+                    result[device_id] = {
+                        'timestamp': df['timestamp'].dt.strftime('%Y-%m-%dT%H:%M:%S').tolist(),
+                        'temperature': df['temperature'].tolist() if 'temperature' in df else [],
+                        'humidity': df['humidity'].tolist() if 'humidity' in df else [],
+                        'absolute_humidity': df.get('absolute_humidity', pd.Series([])).tolist(),
+                        'pressure': df['pressure'].tolist() if 'pressure' in df else [],
+                        'gas_resistance': df['gas_resistance'].tolist() if 'gas_resistance' in df else [],
+                        'co2': df['co2'].tolist() if 'co2' in df else []
+                    }
+
+        return result
+
+
+```
+P2 やP3のFixedデータcsvをgenerate_graph_data() がそのパスから正しく読み込んでいるか
+
+
+# Additional action_Ver.4.66Debug11
+
+- 作業フォルダは G:\RPi-Development\RaspPi5_APconnection\Ver4.66Debug
+下記の対応を実施する。
+
+- 問題 /api/latest や /api/connection/status の取得ログは出ていますが、/api/graphs に対するアクセスログが出ていない
+  -  原因1：JavaScriptが /api/graphs を呼んでいない
+/dashboard に表示されているが loadGraphs() がうまく発火していない可能性。
+$(document).ready(function () { ... }) の中の loadGraphs(); の実行を確認。
+
+原因3：logger の設定不足でログが出ない
+/api/graphs は動いていてもログレベルや出力設定の都合で /var/log/web_interface_solo.log に出力されていない可能性。
+
+ 対策：
+graph_generator.py に logger.info(...) を追加済（上で反映）。
+それでも出力されないなら、明示的にロガーを logging.basicConfig() で初期化する必要があります。
+
+ 起動時の主なエラーと対策
+1. No module named 'p1_software_solo405' の警告
+原因: モジュールパスが環境変数 PYTHONPATH に正しく追加される前に参照された可能性。
+
+対策: start_p1_solo.py で os.environ["PYTHONPATH"] 設定後に subprocess.Popen しているなら、順序を確認。これは致命的ではなく fallback により処理継続しているため、優先度低。
+
+2. Failed to initialize WiFi monitor: 'log_dir'
+原因: WiFiMonitor（もしくは類似クラス）で log_dir が config 辞書に未設定。
+
+対策:
+config.py もしくは wifi_monitor.py で log_dir = /var/log/wifi_monitor/ のように定義・渡す。
+get('log_dir', default_value) のようにすることでエラー回避可能。
+3. Could not parse date from filename P2_fixed.csv など
+原因: ファイル名に日付がないため datetime.strptime() で失敗。
+
+対策: P2_fixed.csv などは固定ファイルとして扱う。読み込み時に try で例外処理し、ログ警告だけにとどめて問題なし。
+
+
+## グラフ自動更新・/api/graphs が反映されない問題
+状況整理
+JavaScript は /api/graphs を 10 秒おきに呼んでいる（OK）
+
+Flask の /api/graphs ルートも反応して HTTP 200（OK）
+
+しかし グラフが描画されない（→中身が空？）
+
+## 原因候補
+1. generate_graph_data() の戻り値が空
+これはログで "P2" も "P3" も出力されていないことで確認可能。
+
+原因としては：
+data_dir パスが /var/lib/raspap_solo/data だがファイルが存在していない
+またはファイル名が P2.csv や P3.csv ではない
+
+対策:
+print(f"Looking for {device_id}.csv in {self.data_dir}") を GraphGenerator.generate_graph_data() 内に追加してログ出力
+ls -l /var/lib/raspap_solo/data/ で P2.csv, P3.csv が存在するか確認
+
+ファイル名が違うなら routes.py の GraphGenerator(data_dir=...) に渡すパスを修正
+
+2. /api/graphs の戻り JSON に中身がない
+→ JavaScript 側 traces の x/y に値が無く Plotly.newPlot で無視されている可能性
+
+対策:/api/graphs の戻り値を直接確認：
+curl http://192.168.0.1/api/graphs?show_p2=true&show_p3=true
+空なら GraphGenerator 側の load_data() 部でファイルロード失敗している
+
+/var/log/web_interface_solo.log に "Error loading data for P2:" など出ていれば原因確定
+
+- 自動更新のトリガー
+現在の <script> では setInterval(loadGraphs, 10000) が設定されており 問題なし。
+ただし loadGraphs() の処理が「空データを描画しようとして無視」されている場合があるため、サーバーサイドのデータ取得ロジックが鍵です。
+
+✳ 推奨修正ステップ
+graph_generator.py にデバッグ出力を追加：
+
+```python
+
+print(f"Loading: {self.data_dir}/{device_id}.csv")
+```
+/var/lib/raspap_solo/data/ に P2.csv P3.csv があるか確認：
+
+
+```bash
+ls -l /var/lib/raspap_solo/data/
+```
+中身のタイムスタンプが過去になっていないかも確認：
+
+head /var/lib/raspap_solo/data/P2.csv
+generate_graph_data() の戻り値を一時的に /api/graphs の中で print(json.dumps(result, indent=2)) して確認
+
+## 重要ポイント
+/var/lib/raspap_solo/data/ 配下にはグラフ描画に必要な P2_fixed.csv が存在せず、RawData_P2/P2_fixed.csv にあるのが原因です。従来の graph_generator.py ではルートディレクトリ直下の P2.csv や P2_YYYY-MM-DD.csv を読み込もうとしていたため、現在の構成とは不一致でした。
+
+✅ 対策内容
+RawData_P2/ や RawData_P3/ フォルダ内の *_fixed.csv を自動探索して最新のファイルを選択
+timestamp カラムでフィルタし、直近 days 日分のデータのみ返す
+generate_graph_data() の戻り値は WebUI が期待するJSON構造 {"P2": {timestamp: [...], ...}, "P3": {...}} 形式にする
+下記は改良例
+```python
+# GraphGenerator.generate_graph_data の戻り値の構造を修正
+# 期待されるのは {"P2": {"timestamp": [...], "temperature": [...], ...}, "P3": {...}} 形式
+
+from datetime import datetime, timedelta
+import pandas as pd
+import os
+
+class GraphGenerator:
+    def __init__(self, data_dir):
+        self.data_dir = data_dir
+
+    def generate_graph_data(self, days=1, show_p2=True, show_p3=True):
+        result = {}
+        cutoff = datetime.now() - timedelta(days=days)
+
+        def load_latest_fixed_csv(device_id):
+            folder = os.path.join(self.data_dir, f"RawData_{device_id}")
+            print(f"Looking for fixed CSVs in: {folder}")
+            if not os.path.isdir(folder):
+                print(f"Directory not found: {folder}")
+                return None
+            candidates = [f for f in os.listdir(folder) if f.endswith("_fixed.csv")]
+            if not candidates:
+                print(f"No _fixed.csv files in {folder}")
+                return None
+            latest_file = max(candidates, key=lambda f: os.path.getmtime(os.path.join(folder, f)))
+            try:
+                df = pd.read_csv(os.path.join(folder, latest_file))
+                df['timestamp'] = pd.to_datetime(df['timestamp'])
+                df = df[df['timestamp'] > cutoff]
+                return df
+            except Exception as e:
+                print(f"Error loading {latest_file}: {e}")
+                return None
+
+        for device_id in ['P2', 'P3']:
+            if (device_id == 'P2' and show_p2) or (device_id == 'P3' and show_p3):
+                df = load_latest_fixed_csv(device_id)
+                if df is not None:
+                    result[device_id] = {
+                        'timestamp': df['timestamp'].dt.strftime('%Y-%m-%dT%H:%M:%S').tolist(),
+                        'temperature': df.get('temperature', pd.Series([])).tolist(),
+                        'humidity': df.get('humidity', pd.Series([])).tolist(),
+                        'absolute_humidity': df.get('absolute_humidity', pd.Series([])).tolist(),
+                        'pressure': df.get('pressure', pd.Series([])).tolist(),
+                        'gas_resistance': df.get('gas_resistance', pd.Series([])).tolist(),
+                        'co2': df.get('co2', pd.Series([])).tolist()
+                    }
+                else:
+                    print(f"No data loaded for {device_id}")
+
+        return result
+
+```
+
+## 要確認
+Flask側 /api/graphs がこの新GraphGeneratorを使っているか
+/routes.py または main.py にて GraphGenerator がインポートされ、使われているか確認。
+/api/graphs のルートが次のように定義されている必要がある
+
+```python
+from flask import jsonify, request
+from graph_generator import GraphGenerator
+
+graph_generator = GraphGenerator(data_dir='/var/lib/raspap_solo/data')
+
+@app.route('/api/graphs')
+def api_graphs():
+    days = int(request.args.get('days', 1))
+    show_p2 = request.args.get('show_p2', 'true').lower() == 'true'
+    show_p3 = request.args.get('show_p3', 'true').lower() == 'true'
+    data = graph_generator.generate_graph_data(days=days, show_p2=show_p2, show_p3=show_p3)
+    return jsonify(data)
+```
+
+WebUI JavaScript 側のfetchは /api/graphs へアクセスしているか
+先ほどのコードで確認済み：OK ✅
+取得したデータに timestamp と temperature 等が存在しているか確認
+実際にブラウザの DevTools の「ネットワーク」→ /api/graphs?... のレスポンスで確認できます。

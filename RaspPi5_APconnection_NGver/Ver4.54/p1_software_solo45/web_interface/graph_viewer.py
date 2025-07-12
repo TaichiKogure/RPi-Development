@@ -17,7 +17,7 @@ Features:
 - Toggle display of P2 and P3 data
 
 Usage:
-    python graph_viewer.py [options]
+    python graph_viewer2.py [options]
 
 Options:
     --p2-path PATH     Path to P2 CSV data file
