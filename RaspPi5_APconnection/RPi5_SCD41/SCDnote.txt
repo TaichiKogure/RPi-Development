@@ -1,0 +1,1183 @@
+#!/usr/bin/env python3
+import time
+import board, busio
+from sensirion_i2c_driver import LinuxI2cTransceiver, I2cConnection
+from sensirion_i2c_scd import Scd4xI2cDevice
+
+# I2C初期化
+i2c_trans = LinuxI2cTransceiver("/dev/i2c-1")
+conn = I2cConnection(i2c_trans)
+scd = Scd4xI2cDevice(conn)
+
+# 定周期計測開始
+scd.stop_periodic_measurement()
+print("シリアル番号:", scd.read_serial_number())
+scd.start_periodic_measurement()
+print("定周期測定開始。3分待ってからFRC実行します...")
+time.sleep(180)
+
+# FRC（強制再校正）
+scd.stop_periodic_measurement()
+time.sleep(0.5)
+ref_ppm = 400
+print(f"FRC開始：参照CO₂ = {ref_ppm} ppm")
+correction = scd.perform_forced_recalibration(ref_ppm)
+print("FRC結果:", "失敗" if correction == 0xFFFF else f"{correction} ppm")
+scd.persist_settings()
+scd.start_periodic_measurement()
+print("測定再開。出力値をご確認ください")
+
+# 値の確認ループ
+while True:
+    if scd.get_data_ready_status():
+        co2, temp, rh = scd.read_measurement()
+        print(f"CO₂: {co2} ppm, 温度: {temp:.2f} °C, 湿度: {rh:.2f} %")
+    time.sleep(1)
+
+
+
+---
+
+
+import time
+from sensirion_i2c_scd.scd4x.device import SCD4X
+import board, busio
+
+# I²C初期化
+i2c = busio.I2C(board.SCL, board.SDA)
+scd = SCD4X(i2c)
+
+# 定周期測定開始（5秒間隔）
+scd.start_periodic_measurement()
+print("定周期測定開始。環境を安定させつつ3分待ってください…")
+time.sleep(180)
+
+# 定周期停止
+scd.stop_periodic_measurement()
+time.sleep(0.5)
+
+# FRC実行（例：屋外なら400ppmを指定）
+ref_ppm = 400
+print(f"FRC開始：参照CO₂ = {ref_ppm} ppm")
+frc_correction = scd.perform_forced_recalibration(ref_ppm)
+if frc_correction == 0xFFFF:
+    print("⚠️ FRC に失敗しました")
+else:
+    print(f"✅ FRC 補正値: {frc_correction} ppm")
+
+# 必要なら設定を EEPROM に保存
+scd.persist_settings()
+
+# 定周期測定再開
+scd.start_periodic_measurement()
+print("定周期測定を再開しました。校正後の値をご確認ください。")
+--------------------------------------------------------------
+
+#!/usr/bin/env python3
+import time
+import board
+import adafruit_scd4x
+
+# I2C 初期化
+i2c = board.I2C()
+scd = adafruit_scd4x.SCD4X(i2c)
+
+# シリアル番号確認
+print("Sensor SN:", [hex(i) for i in scd.serial_number])
+
+# 定周期モード（CO₂＋温湿度の5秒間隔計測）を開始
+scd.start_periodic_measurement()
+print("定周期計測を開始しました。最初の計測を5秒待っています…")
+
+# メインループ：データが準備できたら取得＆表示
+try:
+    while True:
+        if scd.data_ready:
+            print(f"CO₂: {scd.CO2} ppm")
+            print(f"温度: {scd.temperature:.2f} ℃")
+            print(f"湿度: {scd.relative_humidity:.2f} %")
+            print("-" * 30)
+        time.sleep(1)
+
+except KeyboardInterrupt:
+    print("終了中…")
+    scd.stop_periodic_measurement()
+    print("定周期計測終了")
+
+
+
+------------------------------
+
+
+import time
+from sensirion_i2c_driver import I2cConnection
+from sensirion_i2c_driver.linux_i2c_transceiver import LinuxI2cTransceiver
+from sensirion_i2c_scd.scd4x.device import Scd4xI2cDevice
+
+def retrieve_sensor_data():
+    try:
+        # I2Cトランシーバの初期化
+        print("SCD41センサーの初期化...")
+        i2c_transceiver = LinuxI2cTransceiver("/dev/i2c-1")
+        i2c_connection = I2cConnection(i2c_transceiver)
+        scd4x = Scd4xI2cDevice(i2c_connection)
+
+        # 測定開始
+        print("測定を開始します。")
+        scd4x.stop_periodic_measurement()
+        scd4x.start_periodic_measurement()
+
+        # 測定値の取得
+        print("ウォームアップ中... (10秒)")
+        time.sleep(10)  # ウォームアップタイム
+
+        for i in range(5):  # 5回測定を行う
+            time.sleep(5)  # 測定間隔を5秒に設定
+            try:
+                result = scd4x.read_measurement()  # 1回の測定
+
+                # 各データの取得
+                co2 = result.co2  # CO2 (ppm)
+                temperature = result.temperature  # 温度 (°C)
+                humidity = result.humidity  # 湿度 (%)
+
+                # 結果の表示
+                print(f"測定 {i + 1}:")
+                print(f"  CO2濃度: {co2} ppm")
+                print(f"  温度: {temperature:.2f} °C")
+                print(f"  湿度: {humidity:.2f} %")
+            except AttributeError as e:
+                print(f"データ取得エラー（属性エラー）: {e}")
+            except Exception as e:
+                print(f"その他のエラー: {e}")
+
+    except Exception as e:
+        print(f"センサー初期化または測定中にエラーが発生しました: {e}")
+    finally:
+        try:
+            print("測定を停止しています...")
+            scd4x.stop_periodic_measurement()
+            i2c_transceiver.close()
+            print("測定を停止しました。")
+        except Exception as e:
+            print(f"測定停止中にエラーが発生しました: {e}")
+
+if __name__ == "__main__":
+    retrieve_sensor_data()
+
++-+-+-+-+--+-+-++--++-+--+-++--+-+-+++-+-
+
+import time
+from sensirion_i2c_driver import I2cConnection
+from sensirion_i2c_driver.linux_i2c_transceiver import LinuxI2cTransceiver
+from sensirion_i2c_scd.scd4x.device import Scd4xI2cDevice
+
+# センサーからデータをシンプルに取得し、表示するコード
+def simple_read_scd41():
+    try:
+        # I2Cトランシーバの初期化
+        print("初期化中...")
+        i2c_transceiver = LinuxI2cTransceiver("/dev/i2c-1")
+        i2c_connection = I2cConnection(i2c_transceiver)
+        scd4x = Scd4xI2cDevice(i2c_connection)
+        print("I2Cトランシーバを正常に初期化しました！")
+    except Exception as e:
+        print(f"I2Cトランシーバの初期化中にエラーが発生しました: {e}")
+        return
+
+    try:
+        # 測定開始
+        print("SCD41センサーを初期化しています...")
+        scd4x.stop_periodic_measurement()
+        scd4x.start_periodic_measurement()
+        print("測定を開始しました。ウォームアップ中...(10秒)")
+        time.sleep(10)  # ウォームアップ時間
+
+        # データ取得と表示
+        for i in range(5):  # 5回テスト
+            time.sleep(5)  # 5秒ごとに測定
+            try:
+                # 測定値を取得
+                measurement = scd4x.read_measurement()
+
+                # 測定値の表示（直接出力）
+                print(f"測定 {i + 1}:")
+                print(f"  CO2: {measurement[0].co2} ppm")
+                print(f"  温度: {measurement[1].temperature:.2f} °C")
+                print(f"  湿度: {measurement[2].humidity:.2f} %")
+            except Exception as e:
+                print(f"データ取得時にエラーが発生しました: {e}")
+    except Exception as e:
+        print(f"SCD41初期化中にエラーが発生しました: {e}")
+    finally:
+        # 測定停止と終了
+        try:
+            print("測定を停止しています...")
+            scd4x.stop_periodic_measurement()
+            print("測定を停止しました。")
+        except Exception as e:
+            print(f"測定停止中にエラーが発生しました: {e}")
+        finally:
+            i2c_transceiver.close()
+            print("プログラム終了。")
+
+if __name__ == "__main__":
+    simple_read_scd41()
+
+
+------------------
+import time
+from sensirion_i2c_driver import I2cConnection
+from sensirion_i2c_driver.linux_i2c_transceiver import LinuxI2cTransceiver
+from sensirion_i2c_scd.scd4x.device import Scd4xI2cDevice
+import logging
+
+# ログ設定
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("co2_diagnostic_corrected.log", mode="w", encoding="utf-8")
+    ]
+)
+logger = logging.getLogger(__name__)
+
+def check_i2c_connection(bus_number):
+    """
+    I2C接続をチェックします（デバイスが検出されるか確認）。
+    """
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["i2cdetect", "-y", str(bus_number)],
+            capture_output=True,
+            text=True
+        )
+        logger.info(f"I2C devices detected on bus {bus_number}:\n{result.stdout}")
+    except FileNotFoundError:
+        logger.error("The 'i2cdetect' tool is not installed. Please install it with:\n"
+                     "sudo apt-get install i2c-tools")
+    except Exception as e:
+        logger.error(f"Error during I2C connection check: {e}")
+
+def co2_diagnostics():
+    """
+    CO2データ取得確認の診断プログラム
+    """
+    logger.info("=== CO2データ取得確認の診断を開始 ===")
+
+    i2c_bus_number = 1  # Default I2Cバス番号
+    try:
+        # I2Cトランシーバの初期化
+        logger.info("Initializing I2C transceiver...")
+        i2c_transceiver = LinuxI2cTransceiver(f"/dev/i2c-{i2c_bus_number}")
+        i2c_connection = I2cConnection(i2c_transceiver)
+        scd4x = Scd4xI2cDevice(i2c_connection)
+        logger.info("I2Cトランシーバを正常に初期化しました。")
+    except Exception as e:
+        logger.error(f"I2Cトランシーバの初期化エラー: {e}")
+        check_i2c_connection(i2c_bus_number)
+        return
+
+    try:
+        # 初期化とウォームアップ
+        logger.info("センサーの初期化中...")
+        scd4x.stop_periodic_measurement()
+        scd4x.start_periodic_measurement()
+        logger.info("センサー初期化に成功。ウォームアップフェーズを開始します...")
+
+        # ウォームアップ期間（60秒推奨、本テスト用には10秒を採用）
+        warmup_time = 10
+        logger.info(f"ウォームアップ中... ({warmup_time}秒)")
+        time.sleep(warmup_time)
+
+        # 測定データ収集
+        for i in range(10):  # 10回の測定
+            time.sleep(5)  # 5秒ごとに測定
+            try:
+                # データ取得
+                measurements = scd4x.read_measurement()
+
+                # 各測定オブジェクトから正しいデータを取得
+                raw_co2 = measurements[0]
+                raw_temperature = measurements[1]
+                raw_humidity = measurements[2]
+
+                # データ抽出
+                co2 = raw_co2.co2  # ppm値を取得
+                temperature = raw_temperature.temperature  # 温度値を取得
+                humidity = raw_humidity.humidity  # 湿度値を取得
+
+                # 結果をログ出力
+                logger.info(
+                    f"[測定 {i + 1}] CO2: {co2:.2f} ppm, 温度: {temperature:.2f} °C, 湿度: {humidity:.2f} %"
+                )
+            except AttributeError as e:
+                logger.error(
+                    f"[測定 {i + 1}] データ取得エラー（属性エラー）: {e}"
+                )
+            except Exception as e:
+                logger.error(f"[測定 {i + 1}] その他のエラー: {e}")
+
+    except Exception as e:
+        logger.error(f"診断エラー: {e}")
+
+    finally:
+        # 測定の終了
+        try:
+            logger.info("センサー測定を停止中...")
+            scd4x.stop_periodic_measurement()
+            logger.info("測定停止。診断を終了します。")
+        except Exception as e:
+            logger.error(f"センサー停止エラー: {e}")
+        finally:
+            i2c_transceiver.close()
+
+if __name__ == "__main__":
+    co2_diagnostics()
+
+
+(envmonitor-venv) pi@raspberrypi:~/RaspPi5_APconnection/RPi5_SCD41 $ python3 Check1.py
+2025-07-13 12:58:49,721 - INFO - === CO2データ取得確認の診断を開始 ===
+2025-07-13 12:58:49,721 - INFO - Initializing I2C transceiver...
+2025-07-13 12:58:49,721 - INFO - I2Cトランシーバを正常に初期化しました。
+2025-07-13 12:58:49,721 - INFO - センサーの初期化中...
+2025-07-13 12:58:50,224 - INFO - センサー初期化に成功。ウォームアップフェーズを開始します...
+2025-07-13 12:58:50,224 - INFO - ウォームアップ中... (5秒)
+2025-07-13 12:59:00,231 - INFO - [測定 1] raw_measurements: (<sensirion_i2c_scd.scd4x.response_types.Scd4xCarbonDioxide object at 0x7ffefe6c6690>, <sensirion_i2c_scd.scd4x.response_types.Scd4xTemperature object at 0x7ffefe6c7410>, <sensirion_i2c_scd.scd4x.response_types.Scd4xHumidity object at 0x7ffefe6c6750>)
+2025-07-13 12:59:00,232 - ERROR - [測定 1] 測定値の中に期待されるデータがありません (co2=None, temperature=None, humidity=None)
+2025-07-13 12:59:05,235 - INFO - [測定 2] raw_measurements: (<sensirion_i2c_scd.scd4x.response_types.Scd4xCarbonDioxide object at 0x7ffefe6c6710>, <sensirion_i2c_scd.scd4x.response_types.Scd4xTemperature object at 0x7ffefe6c6790>, <sensirion_i2c_scd.scd4x.response_types.Scd4xHumidity object at 0x7ffefe6c7450>)
+2025-07-13 12:59:05,235 - ERROR - [測定 2] 測定値の中に期待されるデータがありません (co2=None, temperature=None, humidity=None)
+2025-07-13 12:59:10,238 - INFO - [測定 3] raw_measurements: (<sensirion_i2c_scd.scd4x.response_types.Scd4xCarbonDioxide object at 0x7ffefe6c7410>, <sensirion_i2c_scd.scd4x.response_types.Scd4xTemperature object at 0x7ffefe6c6510>, <sensirion_i2c_scd.scd4x.response_types.Scd4xHumidity object at 0x7ffefe6c74d0>)
+2025-07-13 12:59:10,238 - ERROR - [測定 3] 測定値の中に期待されるデータがありません (co2=None, temperature=None, humidity=None)
+2025-07-13 12:59:15,241 - INFO - [測定 4] raw_measurements: (<sensirion_i2c_scd.scd4x.response_types.Scd4xCarbonDioxide object at 0x7ffefe6c6790>, <sensirion_i2c_scd.scd4x.response_types.Scd4xTemperature object at 0x7ffefe6c6690>, <sensirion_i2c_scd.scd4x.response_types.Scd4xHumidity object at 0x7ffefe6c6750>)
+2025-07-13 12:59:15,241 - ERROR - [測定 4] 測定値の中に期待されるデータがありません (co2=None, temperature=None, humidity=None)
+
+import time
+from sensirion_i2c_driver import I2cConnection
+from sensirion_i2c_driver.linux_i2c_transceiver import LinuxI2cTransceiver
+from sensirion_i2c_scd.scd4x.device import Scd4xI2cDevice
+import logging
+
+# ログ設定
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("co2_diagnostic_debug.log", mode="w", encoding="utf-8")
+    ]
+)
+logger = logging.getLogger(__name__)
+
+def check_i2c_connection(bus_number):
+    """
+    I2C接続をチェックします（デバイスが検出されるか確認）。
+    """
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["i2cdetect", "-y", str(bus_number)],
+            capture_output=True,
+            text=True
+        )
+        logger.info(f"I2C devices detected on bus {bus_number}:\n{result.stdout}")
+    except FileNotFoundError:
+        logger.error("The 'i2cdetect' tool is not installed. Please install it with:\n"
+                     "sudo apt-get install i2c-tools")
+    except Exception as e:
+        logger.error(f"Error during I2C connection check: {e}")
+
+def co2_diagnostics():
+    """
+    CO2データ取得確認の診断プログラム
+    """
+    logger.info("=== CO2データ取得確認の診断を開始 ===")
+
+    i2c_bus_number = 1  # Default I2Cバス番号
+    try:
+        # I2Cトランシーバの初期化
+        logger.info("Initializing I2C transceiver...")
+        i2c_transceiver = LinuxI2cTransceiver(f"/dev/i2c-{i2c_bus_number}")
+        i2c_connection = I2cConnection(i2c_transceiver)
+        scd4x = Scd4xI2cDevice(i2c_connection)
+        logger.info("I2Cトランシーバを正常に初期化しました。")
+    except Exception as e:
+        logger.error(f"I2Cトランシーバの初期化エラー: {e}")
+        check_i2c_connection(i2c_bus_number)
+        return
+
+    try:
+        # 初期化とウォームアップ
+        logger.info("センサーの初期化中...")
+        scd4x.stop_periodic_measurement()
+        scd4x.start_periodic_measurement()
+        logger.info("センサー初期化に成功。ウォームアップフェーズを開始します...")
+
+        # ウォームアップ期間（テスト用: 5秒）
+        warmup_time = 5
+        logger.info(f"ウォームアップ中... ({warmup_time}秒)")
+        time.sleep(warmup_time)
+
+        # 測定データ収集
+        for i in range(10):  # 10回の測定
+            time.sleep(5)  # 5秒ごとに測定
+            try:
+                # データ取得
+                measurements = scd4x.read_measurement()
+
+                # 測定値のデバッグ出力
+                logger.info(f"[測定 {i + 1}] raw_measurements: {measurements}")
+
+                # 測定値の型と内容を確認
+                logger.debug(f"[測定 {i + 1}] 測定結果の型: {type(measurements)}")
+                if hasattr(measurements, "__dict__"):
+                    logger.debug(f"[測定 {i + 1}] 測定結果の属性: {measurements.__dict__}")
+
+                # 測定値の解析
+                co2 = getattr(measurements, "co2", None)
+                temperature = getattr(measurements, "temperature", None)
+                humidity = getattr(measurements, "humidity", None)
+
+                if co2 is not None and temperature is not None and humidity is not None:
+                    logger.info(
+                        f"[測定 {i + 1}] CO2: {co2:.2f} ppm, 温度: {temperature:.2f} °C, 湿度: {humidity:.2f} %"
+                    )
+                else:
+                    logger.error(
+                        f"[測定 {i + 1}] 測定値の中に期待されるデータがありません (co2={co2}, temperature={temperature}, humidity={humidity})"
+                    )
+            except Exception as e:
+                logger.error(f"[測定 {i + 1}] データ取得エラー: {e}")
+
+    except Exception as e:
+        logger.error(f"診断エラー: {e}")
+
+    finally:
+        # 測定の終了
+        try:
+            logger.info("センサー測定を停止中...")
+            scd4x.stop_periodic_measurement()
+            logger.info("測定停止。診断を終了します。")
+        except Exception as e:
+            logger.error(f"センサー停止エラー: {e}")
+        finally:
+            i2c_transceiver.close()
+
+if __name__ == "__main__":
+    co2_diagnostics()
+
+import time
+from sensirion_i2c_driver import I2cConnection
+from sensirion_i2c_driver.linux_i2c_transceiver import LinuxI2cTransceiver
+from sensirion_i2c_scd.scd4x.device import Scd4xI2cDevice
+import logging
+
+# ログ設定
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("co2_diagnostic_debug.log", mode="w", encoding="utf-8")
+    ]
+)
+logger = logging.getLogger(__name__)
+
+def check_i2c_connection(bus_number):
+    """
+    I2C接続をチェックします（デバイスが検出されるか確認）。
+    """
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["i2cdetect", "-y", str(bus_number)],
+            capture_output=True,
+            text=True
+        )
+        logger.info(f"I2C devices detected on bus {bus_number}:\n{result.stdout}")
+    except FileNotFoundError:
+        logger.error("The 'i2cdetect' tool is not installed. Please install it with:\n"
+                     "sudo apt-get install i2c-tools")
+    except Exception as e:
+        logger.error(f"Error during I2C connection check: {e}")
+
+def co2_diagnostics():
+    """
+    CO2データ取得確認の診断プログラム
+    """
+    logger.info("=== CO2データ取得確認の診断を開始 ===")
+
+    i2c_bus_number = 1  # Default I2Cバス番号
+    try:
+        # I2Cトランシーバの初期化
+        logger.info("Initializing I2C transceiver...")
+        i2c_transceiver = LinuxI2cTransceiver(f"/dev/i2c-{i2c_bus_number}")
+        i2c_connection = I2cConnection(i2c_transceiver)
+        scd4x = Scd4xI2cDevice(i2c_connection)
+        logger.info("I2Cトランシーバを正常に初期化しました。")
+    except Exception as e:
+        logger.error(f"I2Cトランシーバの初期化エラー: {e}")
+        check_i2c_connection(i2c_bus_number)
+        return
+
+    try:
+        # 初期化とウォームアップ
+        logger.info("センサーの初期化中...")
+        scd4x.stop_periodic_measurement()
+        scd4x.start_periodic_measurement()
+        logger.info("センサー初期化に成功。ウォームアップフェーズを開始します...")
+
+        # ウォームアップ期間（テスト用: 5秒）
+        warmup_time = 5
+        logger.info(f"ウォームアップ中... ({warmup_time}秒)")
+        time.sleep(warmup_time)
+
+        # 測定データ収集
+        for i in range(10):  # 10回の測定
+            time.sleep(5)  # 5秒ごとに測定
+            try:
+                # データ取得
+                measurements = scd4x.read_measurement()
+
+                # 測定値のデバッグ出力
+                logger.info(f"[測定 {i + 1}] raw_measurements: {measurements}")
+
+                # 測定値の型と内容を確認
+                logger.debug(f"[測定 {i + 1}] 測定結果の型: {type(measurements)}")
+                if hasattr(measurements, "__dict__"):
+                    logger.debug(f"[測定 {i + 1}] 測定結果の属性: {measurements.__dict__}")
+
+                # 測定値の解析
+                co2 = getattr(measurements, "co2", None)
+                temperature = getattr(measurements, "temperature", None)
+                humidity = getattr(measurements, "humidity", None)
+
+                if co2 is not None and temperature is not None and humidity is not None:
+                    logger.info(
+                        f"[測定 {i + 1}] CO2: {co2:.2f} ppm, 温度: {temperature:.2f} °C, 湿度: {humidity:.2f} %"
+                    )
+                else:
+                    logger.error(
+                        f"[測定 {i + 1}] 測定値の中に期待されるデータがありません (co2={co2}, temperature={temperature}, humidity={humidity})"
+                    )
+            except Exception as e:
+                logger.error(f"[測定 {i + 1}] データ取得エラー: {e}")
+
+    except Exception as e:
+        logger.error(f"診断エラー: {e}")
+
+    finally:
+        # 測定の終了
+        try:
+            logger.info("センサー測定を停止中...")
+            scd4x.stop_periodic_measurement()
+            logger.info("測定停止。診断を終了します。")
+        except Exception as e:
+            logger.error(f"センサー停止エラー: {e}")
+        finally:
+            i2c_transceiver.close()
+
+if __name__ == "__main__":
+    co2_diagnostics()
+
+(envmonitor-venv) pi@raspberrypi:~/RaspPi5_APconnection/RPi5_SCD41 $ python3 Check1.py
+2025-07-13 12:56:29,194 - INFO - === CO2データ取得確認の診断を開始 ===
+2025-07-13 12:56:29,194 - INFO - Initializing I2C transceiver...
+2025-07-13 12:56:29,194 - INFO - I2Cトランシーバを正常に初期化しました。
+2025-07-13 12:56:29,194 - INFO - センサーの初期化中...
+2025-07-13 12:56:29,696 - INFO - センサー初期化に成功。ウォームアップフェーズを開始します...
+2025-07-13 12:56:29,696 - INFO - ウォームアップ中... (5秒)
+2025-07-13 12:56:39,699 - ERROR - [測定 1] データ取得エラー: 測定値を変換できませんでした。正しいメソッドや属性を確認してください。
+2025-07-13 12:56:44,702 - ERROR - [測定 2] データ取得エラー: 測定値を変換できませんでした。正しいメソッドや属性を確認してください。
+
+
+
+import time
+from sensirion_i2c_driver import I2cConnection
+from sensirion_i2c_driver.linux_i2c_transceiver import LinuxI2cTransceiver
+from sensirion_i2c_scd.scd4x.device import Scd4xI2cDevice
+import logging
+
+# ログ設定
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("co2_diagnostic.log", mode="w", encoding="utf-8")
+    ]
+)
+logger = logging.getLogger(__name__)
+
+def check_i2c_connection(bus_number):
+    """
+    I2C接続をチェックします（デバイスが検出されるか確認）。
+    """
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["i2cdetect", "-y", str(bus_number)],
+            capture_output=True,
+            text=True
+        )
+        logger.info(f"I2C devices detected on bus {bus_number}:\n{result.stdout}")
+    except FileNotFoundError:
+        logger.error("The 'i2cdetect' tool is not installed. Please install it with:\n"
+                     "sudo apt-get install i2c-tools")
+    except Exception as e:
+        logger.error(f"Error during I2C connection check: {e}")
+
+def co2_diagnostics():
+    """
+    CO2データ取得確認の診断プログラム。
+    """
+    logger.info("=== CO2データ取得確認の診断を開始 ===")
+    
+    i2c_bus_number = 1  # Default I2Cバス番号
+    try:
+        # I2Cトランシーバの初期化
+        logger.info("Initializing I2C transceiver...")
+        i2c_transceiver = LinuxI2cTransceiver(f"/dev/i2c-{i2c_bus_number}")
+        i2c_connection = I2cConnection(i2c_transceiver)
+        scd4x = Scd4xI2cDevice(i2c_connection)
+        logger.info("I2Cトランシーバを正常に初期化しました。")
+    except Exception as e:
+        logger.error(f"I2Cトランシーバの初期化エラー: {e}")
+        check_i2c_connection(i2c_bus_number)
+        return
+
+    try:
+        # 初期化とウォームアップ
+        logger.info("センサーの初期化中...")
+        scd4x.stop_periodic_measurement()
+        scd4x.start_periodic_measurement()
+        logger.info("センサー初期化に成功。ウォームアップフェーズを開始します...")
+
+        # ウォームアップ期間（テスト用: 5秒）
+        warmup_time = 5
+        logger.info(f"ウォームアップ中... ({warmup_time}秒)")
+        time.sleep(warmup_time)
+
+        # 測定データ収集
+        for i in range(10):  # 10回の測定
+            time.sleep(5)  # 5秒ごとに測定
+            try:
+                # データ取得
+                measurements = scd4x.read_measurement()
+
+                # 測定値の取得と変換
+                co2 = measurements.co2_as_float()        # CO2 in ppm
+                temperature = measurements.temperature_as_float()  # 温度 in Celsius
+                humidity = measurements.humidity_as_float()         # 湿度 in %
+
+                # 結果をログ出力
+                logger.info(
+                    f"[測定 {i + 1}] CO2: {co2:.2f} ppm, 温度: {temperature:.2f} °C, 湿度: {humidity:.2f} %"
+                )
+            except AttributeError:
+                # 数値型への変換エラーが発生した場合
+                logger.error(
+                    f"[測定 {i + 1}] データ取得エラー: 測定値を変換できませんでした。正しいメソッドや属性を確認してください。"
+                )
+            except Exception as e:
+                logger.error(f"[測定 {i + 1}] データ取得エラー: {e}")
+
+    except Exception as e:
+        logger.error(f"診断エラー: {e}")
+
+    finally:
+        # 測定の終了
+        try:
+            logger.info("センサー測定を停止中...")
+            scd4x.stop_periodic_measurement()
+            logger.info("測定停止。診断を終了します。")
+        except Exception as e:
+            logger.error(f"センサー停止エラー: {e}")
+        finally:
+            i2c_transceiver.close()
+
+if __name__ == "__main__":
+    co2_diagnostics()
+
+(envmonitor-venv) pi@raspberrypi:~/RaspPi5_APconnection/RPi5_SCD41 $ python3 Check1.py
+2025-07-13 12:52:25,654 - INFO - === CO2データ取得確認の診断を開始 ===
+2025-07-13 12:52:25,654 - INFO - Initializing I2C transceiver...
+2025-07-13 12:52:25,654 - INFO - I2Cトランシーバを正常に初期化しました。
+2025-07-13 12:52:25,654 - INFO - センサーの初期化中...
+2025-07-13 12:52:26,156 - INFO - センサー初期化に成功。ウォームアップフェーズを開始します...
+2025-07-13 12:52:26,156 - INFO - ウォームアップ中... (5秒)
+2025-07-13 12:52:36,159 - ERROR - [測定 1] データ取得エラー: unsupported format string passed to Scd4xCarbonDioxide.__format__
+2025-07-13 12:52:41,162 - ERROR - [測定 2] データ取得エラー: unsupported format string passed to Scd4xCarbonDioxide.__format__
+2025-07-13 12:52:46,165 - ERROR - [測定 3] データ取得エラー: unsupported format string passed to Scd4xCarbonDioxide.__format__
+2025-07-13 12:52:51,169 - ERROR - [測定 4] データ取得エラー: unsupported format string passed to Scd4xCarbonDioxide.__format__
+2025-07-13 12:52:56,172 - ERROR - [測定 5] データ取得エラー: unsupported format string passed to Scd4xCarbonDioxide.__format__
+2025-07-13 12:53:01,175 - ERROR - [測定 6] データ取得エラー: unsupported format string passed to Scd4xCarbonDioxide.__format__
+2025-07-13 12:53:06,178 - ERROR - [測定 7] データ取得エラー: unsupported format string passed to Scd4xCarbonDioxide.__format__
+2025-07-13 12:53:11,181 - ERROR - [測定 8] データ取得エラー: unsupported format string passed to Scd4xCarbonDioxide.__format__
+2025-07-13 12:53:16,185 - ERROR - [測定 9] データ取得エラー: unsupported format string passed to Scd4xCarbonDioxide.__format__
+2025-07-13 12:53:21,188 - ERROR - [測定 10] データ取得エラー: unsupported format string passed to Scd4xCarbonDioxide.__format__
+2025-07-13 12:53:21,188 - INFO - センサー測定を停止中...
+2025-07-13 12:53:21,689 - INFO - 測定停止。診断を終了します。
+
+import time
+from sensirion_i2c_driver import I2cConnection
+from sensirion_i2c_driver.linux_i2c_transceiver import LinuxI2cTransceiver
+from sensirion_i2c_scd.scd4x.device import Scd4xI2cDevice
+import logging
+
+# ログ設定
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    handlers=[
+        logging.StreamHandler(),  # ターミナルへの出力
+        logging.FileHandler("co2_diagnostic.log", mode="w", encoding="utf-8")  # ログファイル保存
+    ]
+)
+logger = logging.getLogger(__name__)
+
+def check_i2c_connection(bus_number):
+    """
+    I2C接続をチェックします（デバイスが検出されるか確認）。
+    """
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["i2cdetect", "-y", str(bus_number)],
+            capture_output=True,
+            text=True
+        )
+        logger.info(f"I2C devices detected on bus {bus_number}:\n{result.stdout}")
+    except FileNotFoundError:
+        logger.error("The 'i2cdetect' tool is not installed. Please install it with:\n"
+                     "sudo apt-get install i2c-tools")
+    except Exception as e:
+        logger.error(f"Error during I2C connection check: {e}")
+
+def co2_diagnostics():
+    """
+    CO2データ取得確認の診断プログラム
+    """
+    logger.info("=== CO2データ取得確認の診断を開始 ===")
+
+    i2c_bus_number = 1  # Default I2Cバス番号
+    try:
+        # I2Cトランシーバの初期化
+        logger.info("Initializing I2C transceiver...")
+        i2c_transceiver = LinuxI2cTransceiver(f"/dev/i2c-{i2c_bus_number}")
+        i2c_connection = I2cConnection(i2c_transceiver)
+        scd4x = Scd4xI2cDevice(i2c_connection)
+        logger.info("I2Cトランシーバを正常に初期化しました。")
+    except Exception as e:
+        logger.error(f"I2Cトランシーバの初期化エラー: {e}")
+        check_i2c_connection(i2c_bus_number)
+        return
+
+    try:
+        # 初期化とウォームアップ
+        logger.info("センサーの初期化中...")
+        scd4x.stop_periodic_measurement()
+        scd4x.start_periodic_measurement()
+        logger.info("センサー初期化に成功。ウォームアップフェーズを開始します...")
+
+        # ウォームアップ期間：5秒（本番環境では300秒に設定可能）
+        warmup_time = 5
+        logger.info(f"ウォームアップ中... ({warmup_time}秒)")
+        time.sleep(warmup_time)
+
+        # 測定データ収集
+        for i in range(10):  # 10回の測定
+            time.sleep(5)  # 5秒ごとに測定
+            try:
+                # データ取得 (戻り値: tuple で、順に CO2, Temperature, Humidity)
+                measurement = scd4x.read_measurement()
+                co2 = measurement[0]           # CO2 in ppm
+                temperature = measurement[1]   # 温度 in Celsius
+                humidity = measurement[2]      # 湿度 in %
+
+                # 結果をログ出力
+                logger.info(
+                    f"[測定 {i + 1}] CO2: {co2:.2f} ppm, 温度: {temperature:.2f} °C, 湿度: {humidity:.2f} %"
+                )
+            except Exception as e:
+                logger.error(f"[測定 {i + 1}] データ取得エラー: {e}")
+
+    except Exception as e:
+        logger.error(f"診断エラー: {e}")
+
+    finally:
+        # 測定の終了
+        try:
+            logger.info("センサー測定を停止中...")
+            scd4x.stop_periodic_measurement()
+            logger.info("測定停止。診断を終了します。")
+        except Exception as e:
+            logger.error(f"センサー停止エラー: {e}")
+        finally:
+            i2c_transceiver.close()
+
+if __name__ == "__main__":
+    co2_diagnostics()
+
+(envmonitor-venv) pi@raspberrypi:~/RaspPi5_APconnection/RPi5_SCD41 $ python3 Check1.py 
+2025-07-13 12:45:53,520 - INFO - === CO2データ取得確認の診断を開始 ===
+2025-07-13 12:45:53,520 - INFO - Initializing I2C transceiver...
+2025-07-13 12:45:53,520 - INFO - I2Cトランシーバを正常に初期化しました。
+2025-07-13 12:45:53,520 - INFO - センサーの初期化中...
+2025-07-13 12:45:54,023 - INFO - センサー初期化に成功。ウォームアップフェーズを開始します...
+2025-07-13 12:45:54,023 - INFO - ウォームアップ中... (5秒)
+2025-07-13 12:46:04,025 - ERROR - [測定 1] 測定データが無効です: 'tuple' object has no attribute 'co2'
+2025-07-13 12:46:09,028 - ERROR - [測定 2] 測定データが無効です: 'tuple' object has no attribute 'co2'
+2025-07-13 12:46:14,031 - ERROR - [測定 3] 測定データが無効です: 'tuple' object has no attribute 'co2'
+2025-07-13 12:46:19,034 - ERROR - [測定 4] 測定データが無効です: 'tuple' object has no attribute 'co2'
+2025-07-13 12:46:24,040 - ERROR - [測定 5] 測定データが無効です: 'tuple' object has no attribute 'co2'
+2025-07-13 12:46:29,043 - ERROR - [測定 6] 測定データが無効です: 'tuple' object has no attribute 'co2'
+2025-07-13 12:46:34,046 - ERROR - [測定 7] 測定データが無効です: 'tuple' object has no attribute 'co2'
+2025-07-13 12:46:39,058 - ERROR - [測定 8] 測定データが無効です: 'tuple' object has no attribute 'co2'
+2025-07-13 12:46:44,064 - ERROR - [測定 9] 測定データが無効です: 'tuple' object has no attribute 'co2'
+2025-07-13 12:46:49,067 - ERROR - [測定 10] 測定データが無効です: 'tuple' object has no attribute 'co2'
+2025-07-13 12:46:49,067 - INFO - センサー測定を停止中...
+2025-07-13 12:46:49,568 - INFO - 測定停止。診断を終了します。
+
+import time
+from sensirion_i2c_driver import I2cConnection
+from sensirion_i2c_driver.linux_i2c_transceiver import LinuxI2cTransceiver
+from sensirion_i2c_scd.scd4x.device import Scd4xI2cDevice
+import logging
+
+# ログ設定
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    handlers=[
+        logging.StreamHandler(),  # ターミナルへの出力
+        logging.FileHandler("co2_diagnostic.log", mode="w", encoding="utf-8")  # ログファイル保存
+    ]
+)
+logger = logging.getLogger(__name__)
+
+def check_i2c_connection(bus_number):
+    """
+    I2C接続をチェックします（デバイスが検出されるか確認）。
+    """
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["i2cdetect", "-y", str(bus_number)],
+            capture_output=True,
+            text=True
+        )
+        logger.info(f"I2C devices detected on bus {bus_number}:\n{result.stdout}")
+    except FileNotFoundError:
+        logger.error("The 'i2cdetect' tool is not installed. Please install it with:\n"
+                     "sudo apt-get install i2c-tools")
+    except Exception as e:
+        logger.error(f"Error during I2C connection check: {e}")
+
+def co2_diagnostics():
+    """
+    CO2データ取得確認の診断プログラム
+    """
+    logger.info("=== CO2データ取得確認の診断を開始 ===")
+
+    i2c_bus_number = 1  # Default I2Cバス番号
+    try:
+        # I2Cトランシーバの初期化
+        logger.info("Initializing I2C transceiver...")
+        i2c_transceiver = LinuxI2cTransceiver(f"/dev/i2c-{i2c_bus_number}")
+        i2c_connection = I2cConnection(i2c_transceiver)
+        scd4x = Scd4xI2cDevice(i2c_connection)
+        logger.info("I2Cトランシーバを正常に初期化しました。")
+    except Exception as e:
+        logger.error(f"I2Cトランシーバの初期化エラー: {e}")
+        check_i2c_connection(i2c_bus_number)
+        return
+
+    try:
+        # 初期化とウォームアップ
+        logger.info("センサーの初期化中...")
+        scd4x.stop_periodic_measurement()
+        scd4x.start_periodic_measurement()
+        logger.info("センサー初期化に成功。ウォームアップフェーズを開始します...")
+
+        # ウォームアップ期間：5分
+        warmup_time = 5  # 秒 (テスト用途で短縮)
+        logger.info(f"ウォームアップ中... ({warmup_time}秒)")
+        time.sleep(warmup_time)
+
+        # 測定データ収集
+        for i in range(10):  # 10回の測定
+            time.sleep(5)  # 5秒ごとに測定
+            try:
+                measurement = scd4x.read_measurement()  # 測定データ取得
+                co2 = measurement.co2  # ppm値
+                temperature = measurement.temperature  # 温度値
+                humidity = measurement.humidity  # 湿度値
+
+                # 結果をログ出力
+                logger.info(f"[測定 {i + 1}] CO2: {co2:.2f} ppm, 温度: {temperature:.2f} °C, 湿度: {humidity:.2f} %")
+            except AttributeError as e:
+                logger.error(f"[測定 {i + 1}] 測定データが無効です: {e}")
+            except Exception as e:
+                logger.error(f"[測定 {i + 1}] データ取得エラー: {e}")
+
+    except Exception as e:
+        logger.error(f"診断エラー: {e}")
+
+    finally:
+        # 測定の終了
+        try:
+            logger.info("センサー測定を停止中...")
+            scd4x.stop_periodic_measurement()
+            logger.info("測定停止。診断を終了します。")
+        except Exception as e:
+            logger.error(f"センサー停止エラー: {e}")
+        finally:
+            i2c_transceiver.close()
+
+if __name__ == "__main__":
+    co2_diagnostics()
+
+(envmonitor-venv) pi@raspberrypi:~/RaspPi5_APconnection/RPi5_SCD41 $ python3 Check1.py
+2025-07-13 12:39:35,927 - INFO - === CO2データ取得確認の診断を開始 ===
+2025-07-13 12:39:35,927 - INFO - Initializing I2C transceiver...
+2025-07-13 12:39:35,927 - INFO - I2Cトランシーバを正常に初期化しました。
+2025-07-13 12:39:35,927 - INFO - センサーの初期化中...
+2025-07-13 12:39:36,429 - INFO - センサー初期化に成功。ウォームアップフェーズを開始します...
+2025-07-13 12:39:36,429 - INFO - ウォームアップ中... (5秒)
+2025-07-13 12:39:46,432 - ERROR - [測定 1] データ取得エラー: 'Scd4xCarbonDioxide' object has no attribute 'value'
+2025-07-13 12:39:51,435 - ERROR - [測定 2] データ取得エラー: 'Scd4xCarbonDioxide' object has no attribute 'value'
+2025-07-13 12:39:56,438 - ERROR - [測定 3] データ取得エラー: 'Scd4xCarbonDioxide' object has no attribute 'value'
+2025-07-13 12:40:01,441 - ERROR - [測定 4] データ取得エラー: 'Scd4xCarbonDioxide' object has no attribute 'value'
+
+
+
+import time
+from sensirion_i2c_driver import I2cConnection
+from sensirion_i2c_driver.linux_i2c_transceiver import LinuxI2cTransceiver
+from sensirion_i2c_scd.scd4x.device import Scd4xI2cDevice
+import logging
+
+# ログ設定
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    handlers=[
+        logging.StreamHandler(),  # ターミナルへの出力
+        logging.FileHandler("co2_diagnostic.log", mode="w", encoding="utf-8")  # ログファイル保存
+    ]
+)
+logger = logging.getLogger(__name__)
+
+def check_i2c_connection(bus_number):
+    """
+    I2C接続をチェックします（デバイスが検出されるか確認）。
+    """
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["i2cdetect", "-y", str(bus_number)],
+            capture_output=True,
+            text=True
+        )
+        logger.info(f"I2C devices detected on bus {bus_number}:\n{result.stdout}")
+    except FileNotFoundError:
+        logger.error("The 'i2cdetect' tool is not installed. Please install it with:\n"
+                     "sudo apt-get install i2c-tools")
+    except Exception as e:
+        logger.error(f"Error during I2C connection check: {e}")
+
+def co2_diagnostics():
+    """
+    CO2データ取得確認の診断プログラム
+    """
+    logger.info("=== CO2データ取得確認の診断を開始 ===")
+
+    i2c_bus_number = 1  # Default I2Cバス番号
+    try:
+        # I2Cトランシーバの初期化
+        logger.info("Initializing I2C transceiver...")
+        i2c_transceiver = LinuxI2cTransceiver(f"/dev/i2c-{i2c_bus_number}")
+        i2c_connection = I2cConnection(i2c_transceiver)
+        scd4x = Scd4xI2cDevice(i2c_connection)
+        logger.info("I2Cトランシーバを正常に初期化しました。")
+    except Exception as e:
+        logger.error(f"I2Cトランシーバの初期化エラー: {e}")
+        check_i2c_connection(i2c_bus_number)
+        return
+
+    try:
+        # 初期化とウォームアップ
+        logger.info("センサーの初期化中...")
+        scd4x.stop_periodic_measurement()
+        scd4x.start_periodic_measurement()
+        logger.info("センサー初期化に成功。ウォームアップフェーズを開始します...")
+
+        # ウォームアップ期間：5分
+        warmup_time = 300  # 秒
+        logger.info(f"ウォームアップ中... ({warmup_time}秒)")
+        time.sleep(warmup_time)
+
+        # 測定データ収集
+        for i in range(10):  # 10回の測定
+            time.sleep(5)  # 5秒ごとに測定
+            try:
+                measurement = scd4x.read_measurement()  # 測定データ取得
+                co2, temperature, humidity = measurement
+
+                # 必要な値を取得し float に変換
+                co2_value = float(co2.value)
+                temperature_value = float(temperature.value)
+                humidity_value = float(humidity.value)
+
+                # 結果をログ出力
+                logger.info(
+                    f"[測定 {i + 1}] CO2: {co2_value:.2f} ppm, 温度: {temperature_value:.2f} °C, 湿度: {humidity_value:.2f} %"
+                )
+            except Exception as e:
+                logger.error(f"[測定 {i + 1}] データ取得エラー: {e}")
+
+    except Exception as e:
+        logger.error(f"診断エラー: {e}")
+
+    finally:
+        # 測定の終了
+        try:
+            logger.info("センサー測定を停止中...")
+            scd4x.stop_periodic_measurement()
+            logger.info("測定停止。診断を終了します。")
+        except Exception as e:
+            logger.error(f"センサー停止エラー: {e}")
+        finally:
+            i2c_transceiver.close()
+
+if __name__ == "__main__":
+    co2_diagnostics()
+
+
+
+(envmonitor-venv) pi@raspberrypi:~/RaspPi5_APconnection/RPi5_SCD41 $ python3 Check1.py
+2025-07-13 12:11:50,346 - INFO - === CO2データ取得確認の診断を開始 ===
+2025-07-13 12:11:50,347 - INFO - Initializing I2C transceiver...
+2025-07-13 12:11:50,347 - INFO - I2Cトランシーバを正常に初期化しました。
+2025-07-13 12:11:50,347 - INFO - センサーの初期化中...
+2025-07-13 12:11:50,849 - INFO - センサー初期化に成功。ウォームアップフェーズを開始します...
+2025-07-13 12:11:50,849 - INFO - ウォームアップ中... (300秒)
+2025-07-13 12:16:55,852 - ERROR - [測定 1] データ取得エラー: '<=' not supported between instances of 'Scd4xCarbonDioxide' and 'int'
+2025-07-13 12:17:00,855 - ERROR - [測定 2] データ取得エラー: '<=' not supported between instances of 'Scd4xCarbonDioxide' and 'int'
+2025-07-13 12:17:05,858 - ERROR - [測定 3] データ取得エラー: '<=' not supported between instances of 'Scd4xCarbonDioxide' and 'int'
+2025-07-13 12:17:10,865 - ERROR - [測定 4] データ取得エラー: '<=' not supported between instances of 'Scd4xCarbonDioxide' and 'int'
+2025-07-13 12:17:15,871 - ERROR - [測定 5] データ取得エラー: '<=' not supported between instances of 'Scd4xCarbonDioxide' and 'int'
+2025-07-13 12:17:20,874 - ERROR - [測定 6] データ取得エラー: '<=' not supported between instances of 'Scd4xCarbonDioxide' and 'int'
+2025-07-13 12:17:25,877 - ERROR - [測定 7] データ取得エラー: '<=' not supported between instances of 'Scd4xCarbonDioxide' and 'int'
+2025-07-13 12:17:30,889 - ERROR - [測定 8] データ取得エラー: '<=' not supported between instances of 'Scd4xCarbonDioxide' and 'int'
+2025-07-13 12:17:35,892 - ERROR - [測定 9] データ取得エラー: '<=' not supported between instances of 'Scd4xCarbonDioxide' and 'int'
+2025-07-13 12:17:40,895 - ERROR - [測定 10] データ取得エラー: '<=' not supported between instances of 'Scd4xCarbonDioxide' and 'int'
+2025-07-13 12:17:40,895 - INFO - センサー測定を停止中...
+2025-07-13 12:17:41,396 - INFO - 測定停止。診断を終了します。
+
+
+(envmonitor-venv) pi@raspberrypi:~/RaspPi5_APconnection/RPi5_SCD41 $
+
+import time
+from sensirion_i2c_driver import I2cConnection
+from sensirion_i2c_driver.linux_i2c_transceiver import LinuxI2cTransceiver
+from sensirion_i2c_scd.scd4x.device import Scd4xI2cDevice
+import logging
+
+# ログ設定
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+    handlers=[
+        logging.StreamHandler(),  # ターミナルへの出力
+        logging.FileHandler("co2_diagnostic.log", mode="w", encoding="utf-8")  # ログファイル保存
+    ]
+)
+logger = logging.getLogger(__name__)
+
+def check_i2c_connection(bus_number):
+    """
+    I2C接続をチェックします（デバイスが検出されるか確認）。
+    """
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["i2cdetect", "-y", str(bus_number)],
+            capture_output=True,
+            text=True
+        )
+        logger.info(f"I2C devices detected on bus {bus_number}:\n{result.stdout}")
+    except FileNotFoundError:
+        logger.error("The 'i2cdetect' tool is not installed. Please install it with:\n"
+                     "sudo apt-get install i2c-tools")
+    except Exception as e:
+        logger.error(f"Error during I2C connection check: {e}")
+
+def co2_diagnostics():
+    """
+    CO2データ取得確認の診断プログラム
+    """
+    logger.info("=== CO2データ取得確認の診断を開始 ===")
+
+    i2c_bus_number = 1  # Default I2Cバス番号
+    try:
+        # I2Cトランシーバの初期化
+        logger.info("Initializing I2C transceiver...")
+        i2c_transceiver = LinuxI2cTransceiver(f"/dev/i2c-{i2c_bus_number}")
+        i2c_connection = I2cConnection(i2c_transceiver)
+        scd4x = Scd4xI2cDevice(i2c_connection)
+        logger.info("I2Cトランシーバを正常に初期化しました。")
+    except Exception as e:
+        logger.error(f"I2Cトランシーバの初期化エラー: {e}")
+        check_i2c_connection(i2c_bus_number)
+        return
+
+    try:
+        # 初期化とウォームアップ
+        logger.info("センサーの初期化中...")
+        scd4x.stop_periodic_measurement()
+        scd4x.start_periodic_measurement()
+        logger.info("センサー初期化に成功。ウォームアップフェーズを開始します...")
+
+        # ウォームアップ期間：5分
+        warmup_time = 300  # 秒
+        logger.info(f"ウォームアップ中... ({warmup_time}秒)")
+        time.sleep(warmup_time)
+
+        # 測定データ収集
+        for i in range(10):  # 10回の測定
+            time.sleep(5)  # 5秒ごとに測定
+            try:
+                measurement = scd4x.read_measurement()  # 測定データ取得
+                co2, temperature, humidity = measurement
+
+                # CO2データが正しいか確認
+                if co2 <= 0:
+                    logger.warning(f"[測定 {i + 1}] CO2データが無効またはまだ準備中 (値: {co2})。リトライします...")
+                    continue
+
+                # 結果をログ出力
+                logger.info(f"[測定 {i + 1}] CO2: {co2:.2f} ppm, 温度: {temperature:.2f} °C, "
+                            f"湿度: {humidity:.2f} %")
+            except Exception as e:
+                logger.error(f"[測定 {i + 1}] データ取得エラー: {e}")
+
+    except Exception as e:
+        logger.error(f"診断エラー: {e}")
+
+    finally:
+        # 測定の終了
+        try:
+            logger.info("センサー測定を停止中...")
+            scd4x.stop_periodic_measurement()
+            logger.info("測定停止。診断を終了します。")
+        except Exception as e:
+            logger.error(f"センサー停止エラー: {e}")
+        finally:
+            i2c_transceiver.close()
+
+if __name__ == "__main__":
+    co2_diagnostics()

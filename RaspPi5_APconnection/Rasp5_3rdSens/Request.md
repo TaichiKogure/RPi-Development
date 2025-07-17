@@ -1,0 +1,11 @@
+# P1_Sensor V1
+- RaspberryPi５上で駆動するプログラム
+- 作業はG:\RPi-Development\RaspPi5_APconnection\Rasp5_3rdSens で行う。
+- MZ-H19とBME680の複合モニター 
+-  データ取得し任意の形式でCSVファイルとして出力しつつターミナル上でもデータを表示する機能
+- ３０秒ごとにデータ取得する。
+- CSVファイルは/var/lib/raspap_solo/data/RawData_P1に保管する。
+- P1_2025-07-10.csvのように日付ごとに区切りをつけて保管＋P1_fixed.csvのようにすべてのデータを統合した連番ファイルを作成する。
+- CSVファイルの模範形式は 下記リンクに示す。参考はP3だが本番ではP1～と名称を付ける G:\RPi-Development\RaspPi5_APconnection\Rasp5_3rdSens\RefDateType
+- ピンアサインはDocumentに作成する。SDA,SCL,PowerとGNDの４点
+- 接続や必要手順は日本語のmanualを作成する。初心者向けに丁寧に作成すること。。 
