@@ -1,60 +1,50 @@
-# P1_Sensor V1 - Pin Assignments
+# Raspberry Pi 5 センサー接続ピン配置
 
-This document describes the pin connections for the P1_Sensor V1 environmental monitoring system.
+## BME680 センサー接続
 
-## BME680 Environmental Sensor
+BME680は環境センサーで、温度、湿度、気圧、およびガス抵抗を測定します。I2C接続を使用します。
 
-The BME680 is connected to the Raspberry Pi 5 via I2C.
+| BME680 ピン | Raspberry Pi 5 ピン | 説明 |
+|------------|-------------------|------|
+| VCC        | 3.3V (ピン 1)      | 電源 (3.3V) |
+| GND        | GND (ピン 6)       | グラウンド |
+| SCL        | GPIO 3 (ピン 5)    | I2C クロック |
+| SDA        | GPIO 2 (ピン 3)    | I2C データ |
 
-| BME680 Pin | Raspberry Pi 5 Pin | Description |
-|------------|-------------------|-------------|
-| VCC        | 3.3V (Pin 1)      | Power supply |
-| GND        | GND (Pin 6)       | Ground |
-| SCL        | SCL (GPIO 3, Pin 5) | I2C Clock |
-| SDA        | SDA (GPIO 2, Pin 3) | I2C Data |
+## MH-Z19 CO2センサー接続
 
-## MH-Z19 CO2 Sensor
+MH-Z19はCO2センサーで、UART接続を使用します。
 
-The MH-Z19 is connected to the Raspberry Pi 5 via UART.
+| MH-Z19 ピン | Raspberry Pi 5 ピン | 説明 |
+|------------|-------------------|------|
+| VCC (赤)   | 5V (ピン 2 または 4) | 電源 (5V) |
+| GND (黒)   | GND (ピン 6)       | グラウンド |
+| TX (緑)    | GPIO 14 (ピン 8)   | UART0 RX |
+| RX (青)    | GPIO 15 (ピン 10)  | UART0 TX |
 
-| MH-Z19 Pin | Raspberry Pi 5 Pin | Description |
-|------------|-------------------|-------------|
-| VCC (red)  | 5V (Pin 2 or 4)   | Power supply |
-| GND (black)| GND (Pin 6)       | Ground |
-| TX (green) | GPIO 14 (UART0 RX, Pin 8) | UART Transmit from sensor to Pi |
-| RX (blue)  | GPIO 15 (UART0 TX, Pin 10) | UART Receive from Pi to sensor |
-
-## Raspberry Pi 5 GPIO Pinout Reference
-
-For reference, here is the GPIO pinout for the Raspberry Pi 5:
+## 接続図
 
 ```
-   3.3V Power [1]  [2]  5V Power
-   GPIO 2 (SDA) [3]  [4]  5V Power
-   GPIO 3 (SCL) [5]  [6]  Ground
-   GPIO 4 [7]  [8]  GPIO 14 (UART0 TX)
-   Ground [9]  [10] GPIO 15 (UART0 RX)
-   GPIO 17 [11] [12] GPIO 18
-   GPIO 27 [13] [14] Ground
-   GPIO 22 [15] [16] GPIO 23
-   3.3V Power [17] [18] GPIO 24
-   GPIO 10 (SPI0 MOSI) [19] [20] Ground
-   GPIO 9 (SPI0 MISO) [21] [22] GPIO 25
-   GPIO 11 (SPI0 SCLK) [23] [24] GPIO 8 (SPI0 CE0)
-   Ground [25] [26] GPIO 7 (SPI0 CE1)
-   GPIO 0 (ID_SD) [27] [28] GPIO 1 (ID_SC)
-   GPIO 5 [29] [30] Ground
-   GPIO 6 [31] [32] GPIO 12
-   GPIO 13 [33] [34] Ground
-   GPIO 19 [35] [36] GPIO 16
-   GPIO 26 [37] [38] GPIO 20
-   Ground [39] [40] GPIO 21
+Raspberry Pi 5                BME680
++-------------+             +--------+
+| 3.3V (1)    |----------->| VCC    |
+| GPIO 2 (3)  |<---------->| SDA    |
+| GPIO 3 (5)  |<---------->| SCL    |
+| GND (6)     |----------->| GND    |
++-------------+             +--------+
+
+Raspberry Pi 5                MH-Z19
++-------------+             +--------+
+| 5V (2/4)    |----------->| VCC    |
+| GPIO 14 (8) |<-----------| TX     |
+| GPIO 15 (10)|----------->| RX     |
+| GND (6)     |----------->| GND    |
++-------------+             +--------+
 ```
 
-## Notes
+## 注意事項
 
-1. Make sure to connect the sensors carefully according to the pin assignments.
-2. The BME680 uses I2C for communication, which requires pull-up resistors. These are typically already included on the sensor board.
-3. The MH-Z19 uses UART for communication. Make sure to connect TX from the sensor to RX on the Pi, and RX from the sensor to TX on the Pi.
-4. The MH-Z19 requires 5V power, while the BME680 requires 3.3V power.
-5. Both sensors share the same ground connection.
+1. BME680のI2Cアドレスは通常0x76または0x77です。プログラムでは0x77を使用していますが、センサーによって異なる場合があります。
+2. MH-Z19のUARTデバイスは `/dev/ttyAMA0` を使用していますが、Raspberry Piの設定によって異なる場合があります。
+3. 接続する前に、Raspberry Piの電源が切れていることを確認してください。
+4. I2CとUARTが有効になっていることを確認してください。Raspberry Pi設定ツールで有効にできます。

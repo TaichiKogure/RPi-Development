@@ -3,14 +3,15 @@
 """
 Auto GraphViewer - Environmental Data Visualization Tool with Auto-Refresh
 
-This script reads environmental data from CSV files for P2 and P3 devices,
+This script reads environmental data from CSV files for P1, P2, and P3 devices,
 creates interactive Plotly graphs for visualization, and automatically
 refreshes the data every 5 minutes.
 
 Usage:
-    python auto_graph_viewer_Ver4.py [--p2-path PATH] [--p3-path PATH] [--port PORT]
+    python auto_graph_viewer_Ver4.py [--p1-path PATH] [--p2-path PATH] [--p3-path PATH] [--port PORT]
 
 Options:
+    --p1-path PATH    Path to P1 CSV data file (default: /var/lib/raspap_solo/data/RawData_P1/P1_fixed.csv)
     --p2-path PATH    Path to P2 CSV data file (default: /var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv)
     --p3-path PATH    Path to P3 CSV data file (default: /var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv)
     --port PORT       Port for the web server (default: 8050)
@@ -43,6 +44,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Default file paths
+DEFAULT_P1_PATH = "/var/lib/raspap_solo/data/RawData_P1/P1_fixed.csv"
 DEFAULT_P2_PATH = "/var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv"
 DEFAULT_P3_PATH = "/var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv"
 DEFAULT_PORT = 8050
@@ -101,6 +103,23 @@ HTML_TEMPLATE = """
             height: 500px;
             border: none;
         }
+        .download-buttons {
+            margin-top: 10px;
+        }
+        .download-button {
+            display: inline-block;
+            background-color: #4a90e2;
+            color: white;
+            padding: 8px 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .download-button:hover {
+            background-color: #357ab8;
+        }
     </style>
 </head>
 <body>
@@ -119,7 +138,25 @@ HTML_TEMPLATE = """
 
     <div class="status">
         <p>Data period: {{ days }} day(s)</p>
-        <p>Displayed data: {{ "P2" if show_p2 else "" }}{{ ", " if show_p2 and show_p3 else "" }}{{ "P3" if show_p3 else "" }}</p>
+        <p>Displayed data: 
+            {{ "P1" if show_p1 else "" }}
+            {{ ", " if show_p1 and (show_p2 or show_p3) else "" }}
+            {{ "P2" if show_p2 else "" }}
+            {{ ", " if show_p2 and show_p3 else "" }}
+            {{ "P3" if show_p3 else "" }}
+        </p>
+        <div class="download-buttons">
+            <p>Download CSV files:</p>
+            {% if show_p1 %}
+            <a href="/download/p1" class="download-button">Download P1 CSV</a>
+            {% endif %}
+            {% if show_p2 %}
+            <a href="/download/p2" class="download-button">Download P2 CSV</a>
+            {% endif %}
+            {% if show_p3 %}
+            <a href="/download/p3" class="download-button">Download P3 CSV</a>
+            {% endif %}
+        </div>
     </div>
 
     <div class="dashboard-container">
@@ -154,6 +191,8 @@ HTML_TEMPLATE = """
 def parse_arguments():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description='Environmental Data Visualization Tool with Auto-Refresh')
+    parser.add_argument('--p1-path', type=str, default=DEFAULT_P1_PATH,
+                        help=f'Path to P1 CSV data file (default: {DEFAULT_P1_PATH})')
     parser.add_argument('--p2-path', type=str, default=DEFAULT_P2_PATH,
                         help=f'Path to P2 CSV data file (default: {DEFAULT_P2_PATH})')
     parser.add_argument('--p3-path', type=str, default=DEFAULT_P3_PATH,
@@ -164,6 +203,8 @@ def parse_arguments():
                         help=f'Refresh interval in minutes (default: {DEFAULT_INTERVAL})')
     parser.add_argument('--days', type=int, default=1,
                         help='Number of days of data to display (default: 1)')
+    parser.add_argument('--show-p1', action='store_true', default=True,
+                        help='Show P1 data (default: True)')
     parser.add_argument('--show-p2', action='store_true', default=True,
                         help='Show P2 data (default: True)')
     parser.add_argument('--show-p3', action='store_true', default=True,
@@ -246,7 +287,7 @@ def read_csv_data(csv_path, days=1):
         logger.error(f"Error reading CSV file {csv_path}: {e}")
         return None
 
-def generate_graph(parameter, df_p2, df_p3, show_p2=True, show_p3=True):
+def generate_graph(parameter, df_p1, df_p2, df_p3, show_p1=True, show_p2=True, show_p3=True):
     """Generate a graph for the specified parameter."""
     # Define parameter labels
     label_map = {
@@ -261,6 +302,36 @@ def generate_graph(parameter, df_p2, df_p3, show_p2=True, show_p3=True):
 
     # Create figure
     fig = go.Figure()
+
+    # Add P1 data if available
+    if show_p1 and df_p1 is not None and not df_p1.empty and parameter in df_p1.columns:
+        # Check for valid data (at least 2 unique non-NaN values)
+        p1_values = df_p1[parameter].dropna()
+        if len(p1_values) > 0 and len(p1_values.unique()) >= 2:
+            # Log detailed information about the data being plotted
+            min_val = p1_values.min()
+            max_val = p1_values.max()
+            mean_val = p1_values.mean()
+            logger.info(f"Adding P1 data for {parameter}: {len(p1_values)} points, range: {min_val} - {max_val}, mean: {mean_val}")
+
+            # Verify timestamp data is properly formatted
+            if not pd.api.types.is_datetime64_any_dtype(df_p1['timestamp']):
+                logger.warning(f"P1 timestamp column is not datetime type: {df_p1['timestamp'].dtype}")
+                # Try to convert again as a last resort
+                df_p1['timestamp'] = pd.to_datetime(df_p1['timestamp'], errors='coerce')
+                df_p1 = df_p1.dropna(subset=['timestamp'])
+                logger.info(f"Converted P1 timestamps. Remaining rows: {len(df_p1)}")
+
+            # Add trace to the figure
+            fig.add_trace(go.Scatter(
+                x=df_p1['timestamp'],
+                y=df_p1[parameter],
+                mode='lines',
+                name=f'P1 {label}',
+                line=dict(color='green')
+            ))
+        else:
+            logger.warning(f"P1 data for {parameter} has insufficient unique values: {len(p1_values)} points, {len(p1_values.unique())} unique values")
 
     # Add P2 data if available
     if show_p2 and df_p2 is not None and not df_p2.empty and parameter in df_p2.columns:
@@ -329,6 +400,8 @@ def generate_graph(parameter, df_p2, df_p3, show_p2=True, show_p3=True):
 
     # Calculate appropriate Y-axis range with padding
     all_y_values = []
+    if show_p1 and df_p1 is not None and not df_p1.empty and parameter in df_p1.columns:
+        all_y_values.extend(df_p1[parameter].dropna().tolist())
     if show_p2 and df_p2 is not None and not df_p2.empty and parameter in df_p2.columns:
         all_y_values.extend(df_p2[parameter].dropna().tolist())
     if show_p3 and df_p3 is not None and not df_p3.empty and parameter in df_p3.columns:
@@ -388,7 +461,7 @@ def generate_graph(parameter, df_p2, df_p3, show_p2=True, show_p3=True):
 
     return fig
 
-def create_dashboard(df_p2, df_p3, show_p2=True, show_p3=True):
+def create_dashboard(df_p1, df_p2, df_p3, show_p1=True, show_p2=True, show_p3=True):
     """Create a dashboard with all parameters."""
     # Define parameters to plot
     parameters = ["temperature", "humidity", "absolute_humidity", "co2", "pressure", "gas_resistance"]
@@ -417,6 +490,21 @@ def create_dashboard(df_p2, df_p3, show_p2=True, show_p3=True):
 
     # Add traces for each parameter
     for param, (row, col) in param_positions.items():
+        # Add P1 data if available
+        if show_p1 and df_p1 is not None and not df_p1.empty and param in df_p1.columns:
+            p1_values = df_p1[param].dropna()
+            if len(p1_values) > 0 and len(p1_values.unique()) >= 2:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_p1['timestamp'],
+                        y=df_p1[param],
+                        mode='lines',
+                        name=f'P1 {param}',
+                        line=dict(color='green')
+                    ),
+                    row=row, col=col
+                )
+
         # Add P2 data if available
         if show_p2 and df_p2 is not None and not df_p2.empty and param in df_p2.columns:
             p2_values = df_p2[param].dropna()
@@ -449,6 +537,8 @@ def create_dashboard(df_p2, df_p3, show_p2=True, show_p3=True):
 
         # Calculate appropriate Y-axis range
         all_y_values = []
+        if show_p1 and df_p1 is not None and not df_p1.empty and param in df_p1.columns:
+            all_y_values.extend(df_p1[param].dropna().tolist())
         if show_p2 and df_p2 is not None and not df_p2.empty and param in df_p2.columns:
             all_y_values.extend(df_p2[param].dropna().tolist())
         if show_p3 and df_p3 is not None and not df_p3.empty and param in df_p3.columns:
@@ -514,6 +604,9 @@ def update_graphs(args):
     os.makedirs(output_dir, exist_ok=True)
 
     # Read data
+    logger.info(f"Reading P1 data from: {args.p1_path}")
+    df_p1 = read_csv_data(args.p1_path, args.days) if args.show_p1 else None
+
     logger.info(f"Reading P2 data from: {args.p2_path}")
     df_p2 = read_csv_data(args.p2_path, args.days) if args.show_p2 else None
 
@@ -521,13 +614,13 @@ def update_graphs(args):
     df_p3 = read_csv_data(args.p3_path, args.days) if args.show_p3 else None
 
     # Check if we have any data
-    if (df_p2 is None or df_p2.empty) and (df_p3 is None or df_p3.empty):
-        logger.error("No data available for either P2 or P3")
+    if (df_p1 is None or df_p1.empty) and (df_p2 is None or df_p2.empty) and (df_p3 is None or df_p3.empty):
+        logger.error("No data available for P1, P2, or P3")
         return False
 
     # Create dashboard
     logger.info("Creating dashboard")
-    dashboard = create_dashboard(df_p2, df_p3, args.show_p2, args.show_p3)
+    dashboard = create_dashboard(df_p1, df_p2, df_p3, args.show_p1, args.show_p2, args.show_p3)
 
     # Save dashboard
     dashboard_path = os.path.join(output_dir, "dashboard.html")
@@ -539,7 +632,7 @@ def update_graphs(args):
 
     for param in parameters:
         logger.info(f"Creating graph for {param}")
-        graph = generate_graph(param, df_p2, df_p3, args.show_p2, args.show_p3)
+        graph = generate_graph(param, df_p1, df_p2, df_p3, args.show_p1, args.show_p2, args.show_p3)
         if graph:
             graph_path = os.path.join(output_dir, f"{param}.html")
             logger.info(f"Saving {param} graph to: {graph_path}")
@@ -591,6 +684,7 @@ def start_web_server(args):
             last_update=last_update,
             refresh_seconds=refresh_seconds,
             days=args.days,
+            show_p1=args.show_p1,
             show_p2=args.show_p2,
             show_p3=args.show_p3,
             parameters=parameters,
@@ -601,6 +695,21 @@ def start_web_server(args):
     def serve_file(filename):
         """Serve static files from the output directory."""
         return send_from_directory('output', filename)
+
+    @app.route('/download/p1')
+    def download_p1():
+        """Download P1 CSV file."""
+        return send_from_directory(os.path.dirname(args.p1_path), os.path.basename(args.p1_path), as_attachment=True)
+
+    @app.route('/download/p2')
+    def download_p2():
+        """Download P2 CSV file."""
+        return send_from_directory(os.path.dirname(args.p2_path), os.path.basename(args.p2_path), as_attachment=True)
+
+    @app.route('/download/p3')
+    def download_p3():
+        """Download P3 CSV file."""
+        return send_from_directory(os.path.dirname(args.p3_path), os.path.basename(args.p3_path), as_attachment=True)
 
     # Start the Flask app
     logger.info(f"Starting web server on port {args.port}")

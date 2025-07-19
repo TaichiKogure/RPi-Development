@@ -7,7 +7,7 @@ This script reads environmental data from CSV files for P2 and P3 devices
 and creates interactive Plotly graphs for visualization.
 
 Usage:
-    python graph_viewer_Ver3.py [--p2-path PATH] [--p3-path PATH]
+    python graph_viewer_Ver4.py [--p2-path PATH] [--p3-path PATH]
 
 Options:
     --p2-path PATH    Path to P2 CSV data file (default: /var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv)

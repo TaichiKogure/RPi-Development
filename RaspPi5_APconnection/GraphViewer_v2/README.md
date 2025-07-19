@@ -30,7 +30,7 @@ pip install pandas plotly numpy
 ### 基本的な使用方法
 
 ```bash
-python graph_viewer_Ver3.py
+python graph_viewer_Ver4.py
 ```
 
 これにより、デフォルトのパスからP2とP3のデータを読み込み、ブラウザでダッシュボードを表示します。
@@ -38,7 +38,7 @@ python graph_viewer_Ver3.py
 ### コマンドラインオプション
 
 ```bash
-python graph_viewer_Ver3.py [--p2-path PATH] [--p3-path PATH] [--days DAYS] [--output PATH]
+python graph_viewer_Ver4.py [--p2-path PATH] [--p3-path PATH] [--days DAYS] [--output PATH]
 ```
 
 オプション:
@@ -54,25 +54,25 @@ python graph_viewer_Ver3.py [--p2-path PATH] [--p3-path PATH] [--days DAYS] [--o
 1. 過去7日間のデータを表示:
 
 ```bash
-python graph_viewer_Ver3.py --days 7
+python graph_viewer_Ver4.py --days 7
 ```
 
 2. カスタムパスからデータを読み込み:
 
 ```bash
-python graph_viewer_Ver3.py --p2-path "C:\data\p2_data.csv" --p3-path "C:\data\p3_data.csv"
+python graph_viewer_Ver4.py --p2-path "C:\data\p2_data.csv" --p3-path "C:\data\p3_data.csv"
 ```
 
 3. P2のデータのみを表示:
 
 ```bash
-python graph_viewer_Ver3.py --show-p2 --show-p3 False
+python graph_viewer_Ver4.py --show-p2 --show-p3 False
 ```
 
 4. グラフをHTMLファイルとして保存:
 
 ```bash
-python graph_viewer_Ver3.py --output "C:\reports\environmental_data.html"
+python graph_viewer_Ver4.py --output "C:\reports\environmental_data.html"
 ```
 
 ## データ形式

@@ -1,0 +1,23 @@
+# Ver2.0
+このプログラムはデータを行使するには一度ターミナルから再度プログラムを走らせる必要がありますが、これを例えば５分に一度自動で再実行し、ブラウザを自動で更新するような仕掛けに更新する。
+仕様方法はReadmeファイルを作成して必要な作業を日本語で分かりやすく記載すること。
+作業は以下のフォルダで実行G:\RPi-Development\RaspPi5_APconnection\GraphViewer_v2
+
+# Ver2.1
+記載を英語にしてくださいLocalHost8050で開くとダッシュボードと個別グラフが両方とも表示されてしまうためダッシュボード部位は削除してOKです。
+
+# Ver3
+作業は以下のフォルダで実行G:\RPi-Development\RaspPi5_APconnection\GraphViewer_v3
+表記を英語にする。説明文はフォントを少し大きくする。
+最新のアップデート情報はテキストベースでグラフとは別に記載するように修正。
+
+# Ver3.5 Add New .py File
+作業は以下のフォルダで実行G:\RPi-Development\RaspPi5_APconnection\GraphViewer_v3
+新しいWebViewer.pyを作成して
+アクセスポイント化したラズパイ５のアドレス192.168.0.1/db にアクセスすることでダッシュボードを閲覧できるように改良する。
+
+# Ver4
+- 新しくP1のデータを読み込んでデータに出力する機能を追加する。
+- 作業は以下のフォルダで実行するG:\RPi-Development\RaspPi5_APconnection\GraphViewer_v4
+- p1のデータは/var/lib/raspap_solo/data/RawData_P1 に保管されているP1_fixed.csvというデータを読み込みVer3と同じ要領でグラフに出力する。
+- Webブラウザ上に参照しているP1,P2,P3のcsvファイルを直接ダウンロードするボタンを追加する。

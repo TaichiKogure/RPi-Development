@@ -1,305 +1,187 @@
-# P1_Sensor V1 - 取扱説明書
+# Raspberry Pi 5 環境センサーシステム マニュアル
 
 ## 概要
 
-P1_Sensor V1は、Raspberry Pi 5に接続されたMH-Z19 CO2センサーとBME680環境センサーからデータを収集し、CSVファイルに記録するシステムです。このシステムは、室内の環境データ（温度、湿度、気圧、ガス抵抗、CO2濃度）を30秒ごとに測定し、日付ごとのCSVファイルと統合CSVファイルに保存します。
+このシステムは、Raspberry Pi 5を使用して、BME680環境センサーとMH-Z19 CO2センサーからデータを収集し、CSVファイルに記録するものです。温度、湿度、気圧、ガス抵抗、CO2濃度、絶対湿度を30秒ごとに測定し、日付ごとのCSVファイルと統合CSVファイルに保存します。
 
-## 必要なもの
+## 必要なハードウェア
 
 - Raspberry Pi 5
-- BME680センサー
-- MH-Z19 CO2センサー
-- 接続用ケーブル
-- microSDカード（Raspberry Pi OS搭載）
-- 電源アダプター
+- BME680センサー（温度、湿度、気圧、ガス抵抗測定用）
+- MH-Z19センサー（CO2濃度測定用）
+- ジャンパーワイヤー
+- 電源アダプター（Raspberry Pi 5用）
 
-## インストール手順
+## 必要なソフトウェア
+
+- Raspberry Pi OS (Bullseye以降)
+- Python 3.7以降
+- 必要なPythonライブラリ:
+  - bme680
+  - smbus2
+  - pyserial
+
+## セットアップ手順
 
 ### 1. ハードウェアの接続
 
 センサーをRaspberry Pi 5に接続します。詳細な接続方法は `pin_assignments.md` ファイルを参照してください。
 
-#### BME680センサーの接続
+### 2. Raspberry Pi OSのセットアップ
 
-| BME680ピン | Raspberry Pi 5ピン | 説明 |
-|------------|-------------------|-------------|
-| VCC        | 3.3V (Pin 1)      | 電源 |
-| GND        | GND (Pin 6)       | グラウンド |
-| SCL        | SCL (GPIO 3, Pin 5) | I2Cクロック |
-| SDA        | SDA (GPIO 2, Pin 3) | I2Cデータ |
+1. Raspberry Pi OSをインストールし、基本的なセットアップを完了させてください。
+2. I2CとUARTを有効にします:
+   ```
+   sudo raspi-config
+   ```
+   - 「Interface Options」を選択
+   - 「I2C」を選択して有効にする
+   - 「Serial Port」を選択し、シリアルログインシェルを無効に、シリアルハードウェアを有効にする
 
-#### MH-Z19 CO2センサーの接続
+### 3. 必要なライブラリのインストール
 
-| MH-Z19ピン | Raspberry Pi 5ピン | 説明 |
-|------------|-------------------|-------------|
-| VCC (赤)   | 5V (Pin 2または4) | 電源 |
-| GND (黒)   | GND (Pin 6)       | グラウンド |
-| TX (緑)    | GPIO 14 (UART0 RX, Pin 8) | UARTセンサーからPiへの送信 |
-| RX (青)    | GPIO 15 (UART0 TX, Pin 10) | UARTセンサーへのPiからの受信 |
-
-### 2. ソフトウェアのインストール
-
-1. Raspberry Pi OSがインストールされたRaspberry Pi 5を起動します。
-
-2. 必要なパッケージをインストールします：
+ターミナルで以下のコマンドを実行します:
 
 ```bash
-sudo apt update
-sudo apt upgrade -y
-sudo apt install -y python3-pip python3-smbus i2c-tools
+sudo apt-get update
+sudo apt-get install -y python3-pip i2c-tools
+sudo pip3 install bme680 smbus2 pyserial
 ```
 
-3. 必要なPythonライブラリをインストールします：
+### 4. I2Cデバイスの確認
 
-```bash
-pip3 install pyserial smbus2
-```
-
-4. I2CとUARTを有効にします：
-
-```bash
-sudo raspi-config
-```
-
-- 「Interface Options」を選択
-- 「I2C」を選択し、有効にする
-- 「Serial Port」を選択
-- シリアルログインシェルを無効にする
-- シリアルハードウェアを有効にする
-
-5. Raspberry Piを再起動します：
-
-```bash
-sudo reboot
-```
-
-6. I2Cデバイスが認識されていることを確認します：
+BME680センサーが正しく接続されているか確認します:
 
 ```bash
 sudo i2cdetect -y 1
 ```
 
-BME680センサーのアドレス（通常は0x76または0x77）が表示されることを確認します。
+出力に「77」（または「76」）が表示されていれば、BME680が検出されています。
 
-7. データ保存用のディレクトリを作成します：
+### 5. データディレクトリの作成
+
+データを保存するディレクトリを作成します:
 
 ```bash
 sudo mkdir -p /var/lib/raspap_solo/data/RawData_P1
 sudo chmod 777 /var/lib/raspap_solo/data/RawData_P1
 ```
 
-8. P1_Sensor.pyファイルをRaspberry Piにコピーします。
+### 6. プログラムのダウンロードと実行
 
-### 3. プログラムの実行
+1. プログラムファイル（P1_Sensor.py）をRaspberry Piにコピーします。
+2. 実行権限を付与します:
+   ```bash
+   chmod +x P1_Sensor.py
+   ```
+3. プログラムを実行します:
+   ```bash
+   python3 P1_Sensor.py
+   ```
 
-1. P1_Sensor.pyを実行します：
+## 自動起動の設定
 
-```bash
-python3 P1_Sensor.py
-```
+システム起動時にプログラムを自動的に実行するように設定できます:
 
-2. プログラムが正常に起動すると、以下のようなログが表示されます：
+1. systemdサービスファイルを作成します:
+   ```bash
+   sudo nano /etc/systemd/system/p1-sensor.service
+   ```
 
-```
-2023-07-01 12:00:00,000 - INFO - Starting P1_Sensor V1
-2023-07-01 12:00:00,100 - INFO - Initializing BME680 sensor...
-2023-07-01 12:00:00,200 - INFO - BME680 found with correct chip ID
-2023-07-01 12:00:00,300 - INFO - BME680 calibration data read successfully
-2023-07-01 12:00:00,400 - INFO - BME680 initialization complete
-2023-07-01 12:00:00,500 - INFO - Initializing MH-Z19 sensor...
-2023-07-01 12:00:00,600 - INFO - MH-Z19 initialized on /dev/ttyAMA0
-2023-07-01 12:00:00,700 - INFO - Warming up for 30 seconds...
-...
-2023-07-01 12:00:30,700 - INFO - MH-Z19 warmup complete
-2023-07-01 12:00:30,800 - INFO - Initializing data logger...
-2023-07-01 12:00:30,900 - INFO - Data will be logged to: /var/lib/raspap_solo/data/RawData_P1
-2023-07-01 12:00:31,000 - INFO - Consolidated data will be logged to: /var/lib/raspap_solo/data/RawData_P1/P1_fixed.csv
-2023-07-01 12:00:31,100 - INFO - Starting main loop with 30 second interval...
-2023-07-01 12:00:31,200 - INFO - Temperature: 25.0°C, Humidity: 50.0%, Pressure: 1013.25hPa, Gas: 10000Ω, CO2: 450 ppm
-```
+2. 以下の内容を入力します:
+   ```
+   [Unit]
+   Description=P1 Environmental Sensor Service
+   After=network.target
 
-3. プログラムを終了するには、`Ctrl+C`を押します。
+   [Service]
+   ExecStart=/usr/bin/python3 /home/pi/P1_Sensor.py
+   WorkingDirectory=/home/pi
+   StandardOutput=inherit
+   StandardError=inherit
+   Restart=always
+   User=pi
 
-### 4. 自動起動の設定
+   [Install]
+   WantedBy=multi-user.target
+   ```
 
-システム起動時に自動的にプログラムを実行するように設定するには：
+3. サービスを有効にして起動します:
+   ```bash
+   sudo systemctl enable p1-sensor.service
+   sudo systemctl start p1-sensor.service
+   ```
 
-1. サービスファイルを作成します：
-
-```bash
-sudo nano /etc/systemd/system/p1-sensor.service
-```
-
-2. 以下の内容を入力します：
-
-```
-[Unit]
-Description=P1 Sensor Data Collection Service
-After=network.target
-
-[Service]
-ExecStart=/usr/bin/python3 /path/to/P1_Sensor.py
-WorkingDirectory=/path/to
-StandardOutput=inherit
-StandardError=inherit
-Restart=always
-User=pi
-
-[Install]
-WantedBy=multi-user.target
-```
-
-3. サービスを有効にして起動します：
-
-```bash
-sudo systemctl enable p1-sensor.service
-sudo systemctl start p1-sensor.service
-```
-
-4. サービスのステータスを確認します：
-
-```bash
-sudo systemctl status p1-sensor.service
-```
+4. サービスのステータスを確認します:
+   ```bash
+   sudo systemctl status p1-sensor.service
+   ```
 
 ## データの確認
 
-データは以下の場所に保存されます：
+データは以下の場所に保存されます:
 
 - 日付ごとのCSVファイル: `/var/lib/raspap_solo/data/RawData_P1/P1_YYYY-MM-DD.csv`
 - 統合CSVファイル: `/var/lib/raspap_solo/data/RawData_P1/P1_fixed.csv`
 
-CSVファイルの内容を確認するには：
+CSVファイルの内容を確認するには:
 
 ```bash
-head -n 10 /var/lib/raspap_solo/data/RawData_P1/P1_fixed.csv
+tail -n 10 /var/lib/raspap_solo/data/RawData_P1/P1_fixed.csv
 ```
 
 ## トラブルシューティング
 
-### センサーが認識されない場合
+### センサーが検出されない場合
 
-1. I2C接続を確認します：
+1. 配線を確認してください。
+2. I2Cが有効になっているか確認してください:
+   ```bash
+   lsmod | grep i2c_
+   ```
+3. BME680のI2Cアドレスを確認してください（0x76または0x77）。
+4. プログラム内のI2Cアドレスを必要に応じて変更してください。
 
-```bash
-sudo i2cdetect -y 1
-```
+### MH-Z19センサーが動作しない場合
 
-2. ケーブル接続を確認します。
+1. UARTが有効になっているか確認してください。
+2. UARTデバイスパスが正しいか確認してください:
+   ```bash
+   ls -l /dev/ttyAMA0
+   ```
+3. 必要に応じて、プログラム内のUARTデバイスパスを変更してください。
 
-3. ログファイルを確認します：
+### プログラムがエラーで終了する場合
 
-```bash
-cat p1_sensor.log
-```
+1. ログファイル（p1_sensor.log）を確認してください:
+   ```bash
+   tail -n 50 p1_sensor.log
+   ```
+2. 必要なライブラリがすべてインストールされているか確認してください。
 
-### データが記録されない場合
+## データ形式
 
-1. データディレクトリのパーミッションを確認します：
+CSVファイルには以下の列が含まれます:
 
-```bash
-ls -la /var/lib/raspap_solo/data/RawData_P1
-```
+- timestamp: 測定時刻（YYYY-MM-DD HH:MM:SS形式）
+- device_id: デバイスID（常に「P1」）
+- temperature: 温度（°C）
+- humidity: 相対湿度（%）
+- pressure: 気圧（hPa）
+- gas_resistance: ガス抵抗（Ω）
+- co2: CO2濃度（ppm）
+- absolute_humidity: 絶対湿度（g/m³）
 
-2. ディレクトリが存在しない場合は作成します：
+## プログラムの停止
 
-```bash
-sudo mkdir -p /var/lib/raspap_solo/data/RawData_P1
-sudo chmod 777 /var/lib/raspap_solo/data/RawData_P1
-```
-
-### MH-Z19センサーのエラー
-
-1. UARTが有効になっているか確認します：
-
-```bash
-sudo raspi-config
-```
-
-2. ケーブル接続を確認します。特にTXとRXが正しく接続されているか確認します。
-
-3. 別のUARTデバイスパスを試してみてください（例：`/dev/ttyS0`）。
-
-### BME680センサーのエラー
-
-1. I2Cが有効になっているか確認します：
+プログラムを停止するには、Ctrl+Cを押すか、サービスとして実行している場合は以下のコマンドを使用します:
 
 ```bash
-sudo raspi-config
+sudo systemctl stop p1-sensor.service
 ```
 
-2. ケーブル接続を確認します。
+## 参考情報
 
-3. 別のI2Cアドレスを試してみてください（0x76または0x77）。
-
-## メンテナンス
-
-### ログファイルの管理
-
-ログファイルは時間とともに大きくなる可能性があります。定期的にログファイルをローテーションするには：
-
-```bash
-sudo nano /etc/logrotate.d/p1-sensor
-```
-
-以下の内容を入力します：
-
-```
-/path/to/p1_sensor.log {
-    daily
-    rotate 7
-    compress
-    delaycompress
-    missingok
-    notifempty
-    create 644 pi pi
-}
-```
-
-### CSVファイルの管理
-
-CSVファイルも時間とともに大きくなります。古いデータを定期的にバックアップし、削除することをお勧めします：
-
-```bash
-# バックアップ
-tar -czf /home/pi/p1_sensor_data_backup_$(date +%Y%m%d).tar.gz /var/lib/raspap_solo/data/RawData_P1
-
-# 30日以上前のCSVファイルを削除
-find /var/lib/raspap_solo/data/RawData_P1 -name "P1_*.csv" -type f -mtime +30 -delete
-```
-
-## 技術仕様
-
-- BME680センサー：
-  - 温度測定範囲：-40°C～85°C
-  - 湿度測定範囲：0～100% RH
-  - 気圧測定範囲：300～1100 hPa
-  - ガス抵抗測定：数kΩ～数MΩ
-
-- MH-Z19 CO2センサー：
-  - CO2測定範囲：400～5000 ppm
-  - 精度：±50 ppm + 5%
-  - 応答時間：<60秒
-  - ウォームアップ時間：3分（完全な精度には24時間）
-
-- データ収集間隔：30秒
-
-## 注意事項
-
-1. センサーの精度は環境条件によって影響を受ける場合があります。
-2. MH-Z19センサーは定期的なキャリブレーションが必要な場合があります。
-3. システムを長時間稼働させる場合は、Raspberry Piの冷却を考慮してください。
-4. データディレクトリが一杯になると、新しいデータの記録ができなくなる可能性があります。定期的にディスク使用量を確認してください。
-
-## サポート
-
-問題が発生した場合は、以下の情報を含めてサポートにお問い合わせください：
-
-1. ログファイルの内容
-2. 使用しているRaspberry Piのモデルとバージョン
-3. 接続しているセンサーの詳細
-4. 発生している問題の詳細な説明
-
-## ライセンス
-
-このプロジェクトはMITライセンスの下で公開されています。
+- BME680データシート: https://www.bosch-sensortec.com/products/environmental-sensors/gas-sensors/bme680/
+- MH-Z19データシート: https://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z19b-co2-ver1_0.pdf
+- Raspberry Pi GPIO: https://www.raspberrypi.org/documentation/computers/os.html#gpio-and-the-40-pin-header

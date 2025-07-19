@@ -1,35 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Auto GraphViewer - Environmental Data Visualization Tool with Auto-Refresh
+GraphViewer_v4 - Environmental Data Visualization Tool
 
-This script reads environmental data from CSV files for P2 and P3 devices,
-creates interactive Plotly graphs for visualization, and automatically
-refreshes the data every 5 minutes.
+This script reads environmental data from CSV files for P1, P2, and P3 devices
+and creates interactive Plotly graphs for visualization.
 
 Usage:
-    python auto_graph_viewer_Ver4.py [--p2-path PATH] [--p3-path PATH] [--port PORT]
+    python graph_viewer_Ver4.py [--p1-path PATH] [--p2-path PATH] [--p3-path PATH]
 
 Options:
+    --p1-path PATH    Path to P1 CSV data file (default: /var/lib/raspap_solo/data/RawData_P1/P1_fixed.csv)
     --p2-path PATH    Path to P2 CSV data file (default: /var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv)
     --p3-path PATH    Path to P3 CSV data file (default: /var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv)
-    --port PORT       Port for the web server (default: 8050)
-    --interval MINS   Refresh interval in minutes (default: 5)
 """
 
 import os
 import sys
-import time
 import argparse
 import logging
 import datetime
-import threading
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.io as pio
 from plotly.subplots import make_subplots
-from flask import Flask, render_template_string, send_from_directory
 
 # Configure logging
 logging.basicConfig(
@@ -37,137 +32,35 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('auto_graph_viewer.log')
+        logging.FileHandler('graph_viewer.log')
     ]
 )
 logger = logging.getLogger(__name__)
 
 # Default file paths
+DEFAULT_P1_PATH = "/var/lib/raspap_solo/data/RawData_P1/P1_fixed.csv"
 DEFAULT_P2_PATH = "/var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv"
 DEFAULT_P3_PATH = "/var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv"
-DEFAULT_PORT = 8050
-DEFAULT_INTERVAL = 5  # minutes
-
-# HTML template with auto-refresh
-HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="{{ refresh_seconds }}">
-    <title>Environmental Data Dashboard</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            font-size: 16px;
-        }
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .status {
-            background-color: #f0f0f0;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            font-size: 18px;
-        }
-        .update-info {
-            background-color: #e8f4f8;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            font-size: 18px;
-            border-left: 5px solid #4a90e2;
-        }
-        .dashboard-container {
-            margin-bottom: 30px;
-        }
-        .graphs-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
-            gap: 20px;
-        }
-        .graph-item {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
-        }
-        iframe {
-            width: 100%;
-            height: 500px;
-            border: none;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>Environmental Data Dashboard</h1>
-        <div>
-            <button onclick="location.reload()">Refresh Now</button>
-        </div>
-    </div>
-
-    <div class="update-info">
-        <h2>Latest Update Information</h2>
-        <p>Last update: {{ last_update }}</p>
-        <p>Next update in: <span id="countdown">{{ refresh_seconds }}</span> seconds</p>
-    </div>
-
-    <div class="status">
-        <p>Data period: {{ days }} day(s)</p>
-        <p>Displayed data: {{ "P2" if show_p2 else "" }}{{ ", " if show_p2 and show_p3 else "" }}{{ "P3" if show_p3 else "" }}</p>
-    </div>
-
-    <div class="dashboard-container">
-        <h2>Dashboard</h2>
-        <iframe src="/dashboard.html"></iframe>
-    </div>
-
-    <div class="graphs-container">
-        {% for param in parameters %}
-        <div class="graph-item">
-            <h3>{{ param_labels[param] }}</h3>
-            <iframe src="/{{ param }}.html"></iframe>
-        </div>
-        {% endfor %}
-    </div>
-
-    <script>
-        // Countdown timer
-        let seconds = {{ refresh_seconds }};
-        const countdownElement = document.getElementById('countdown');
-
-        setInterval(function() {
-            seconds--;
-            if (seconds < 0) seconds = 0;
-            countdownElement.textContent = seconds;
-        }, 1000);
-    </script>
-</body>
-</html>
-"""
 
 def parse_arguments():
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description='Environmental Data Visualization Tool with Auto-Refresh')
+    parser = argparse.ArgumentParser(description='Environmental Data Visualization Tool')
+    parser.add_argument('--p1-path', type=str, default=DEFAULT_P1_PATH,
+                        help=f'Path to P1 CSV data file (default: {DEFAULT_P1_PATH})')
     parser.add_argument('--p2-path', type=str, default=DEFAULT_P2_PATH,
                         help=f'Path to P2 CSV data file (default: {DEFAULT_P2_PATH})')
     parser.add_argument('--p3-path', type=str, default=DEFAULT_P3_PATH,
                         help=f'Path to P3 CSV data file (default: {DEFAULT_P3_PATH})')
-    parser.add_argument('--port', type=int, default=DEFAULT_PORT,
-                        help=f'Port for the web server (default: {DEFAULT_PORT})')
-    parser.add_argument('--interval', type=int, default=DEFAULT_INTERVAL,
-                        help=f'Refresh interval in minutes (default: {DEFAULT_INTERVAL})')
     parser.add_argument('--days', type=int, default=1,
                         help='Number of days of data to display (default: 1)')
+    parser.add_argument('--show-p1', action='store_true', default=True,
+                        help='Show P1 data (default: True)')
     parser.add_argument('--show-p2', action='store_true', default=True,
                         help='Show P2 data (default: True)')
     parser.add_argument('--show-p3', action='store_true', default=True,
                         help='Show P3 data (default: True)')
+    parser.add_argument('--output', type=str, default=None,
+                        help='Output file path (default: None, display in browser)')
     return parser.parse_args()
 
 def read_csv_data(csv_path, days=1):
@@ -246,21 +139,51 @@ def read_csv_data(csv_path, days=1):
         logger.error(f"Error reading CSV file {csv_path}: {e}")
         return None
 
-def generate_graph(parameter, df_p2, df_p3, show_p2=True, show_p3=True):
+def generate_graph(parameter, df_p1, df_p2, df_p3, show_p1=True, show_p2=True, show_p3=True):
     """Generate a graph for the specified parameter."""
     # Define parameter labels
     label_map = {
-        "temperature": "Temperature (°C)",
-        "humidity": "Relative Humidity (%)",
-        "absolute_humidity": "Absolute Humidity (g/m³)",
-        "co2": "CO2 Concentration (ppm)",
-        "pressure": "Pressure (hPa)",
-        "gas_resistance": "Gas Resistance (Ω)"
+        "temperature": "気温 (°C)",
+        "humidity": "相対湿度 (%)",
+        "absolute_humidity": "絶対湿度 (g/m³)",
+        "co2": "CO2濃度 (ppm)",
+        "pressure": "気圧 (hPa)",
+        "gas_resistance": "ガス抵抗 (Ω)"
     }
     label = label_map.get(parameter, parameter.capitalize())
 
     # Create figure
     fig = go.Figure()
+
+    # Add P1 data if available
+    if show_p1 and df_p1 is not None and not df_p1.empty and parameter in df_p1.columns:
+        # Check for valid data (at least 2 unique non-NaN values)
+        p1_values = df_p1[parameter].dropna()
+        if len(p1_values) > 0 and len(p1_values.unique()) >= 2:
+            # Log detailed information about the data being plotted
+            min_val = p1_values.min()
+            max_val = p1_values.max()
+            mean_val = p1_values.mean()
+            logger.info(f"Adding P1 data for {parameter}: {len(p1_values)} points, range: {min_val} - {max_val}, mean: {mean_val}")
+
+            # Verify timestamp data is properly formatted
+            if not pd.api.types.is_datetime64_any_dtype(df_p1['timestamp']):
+                logger.warning(f"P1 timestamp column is not datetime type: {df_p1['timestamp'].dtype}")
+                # Try to convert again as a last resort
+                df_p1['timestamp'] = pd.to_datetime(df_p1['timestamp'], errors='coerce')
+                df_p1 = df_p1.dropna(subset=['timestamp'])
+                logger.info(f"Converted P1 timestamps. Remaining rows: {len(df_p1)}")
+
+            # Add trace to the figure
+            fig.add_trace(go.Scatter(
+                x=df_p1['timestamp'],
+                y=df_p1[parameter],
+                mode='lines',
+                name=f'P1 {label}',
+                line=dict(color='green')
+            ))
+        else:
+            logger.warning(f"P1 data for {parameter} has insufficient unique values: {len(p1_values)} points, {len(p1_values.unique())} unique values")
 
     # Add P2 data if available
     if show_p2 and df_p2 is not None and not df_p2.empty and parameter in df_p2.columns:
@@ -329,6 +252,8 @@ def generate_graph(parameter, df_p2, df_p3, show_p2=True, show_p3=True):
 
     # Calculate appropriate Y-axis range with padding
     all_y_values = []
+    if show_p1 and df_p1 is not None and not df_p1.empty and parameter in df_p1.columns:
+        all_y_values.extend(df_p1[parameter].dropna().tolist())
     if show_p2 and df_p2 is not None and not df_p2.empty and parameter in df_p2.columns:
         all_y_values.extend(df_p2[parameter].dropna().tolist())
     if show_p3 and df_p3 is not None and not df_p3.empty and parameter in df_p3.columns:
@@ -355,8 +280,8 @@ def generate_graph(parameter, df_p2, df_p3, show_p2=True, show_p3=True):
 
     # Update layout with improved settings
     fig.update_layout(
-        title=f"{label} Over Time",
-        xaxis_title="Time",
+        title=f"{label}の経時変化",
+        xaxis_title="時間",
         yaxis_title=label,
         margin=dict(l=20, r=20, t=40, b=20),
         paper_bgcolor='rgba(0,0,0,0)',
@@ -388,7 +313,7 @@ def generate_graph(parameter, df_p2, df_p3, show_p2=True, show_p3=True):
 
     return fig
 
-def create_dashboard(df_p2, df_p3, show_p2=True, show_p3=True):
+def create_dashboard(df_p1, df_p2, df_p3, show_p1=True, show_p2=True, show_p3=True):
     """Create a dashboard with all parameters."""
     # Define parameters to plot
     parameters = ["temperature", "humidity", "absolute_humidity", "co2", "pressure", "gas_resistance"]
@@ -397,9 +322,9 @@ def create_dashboard(df_p2, df_p3, show_p2=True, show_p3=True):
     fig = make_subplots(
         rows=3, cols=2,
         subplot_titles=[
-            "Temperature (°C)", "Relative Humidity (%)",
-            "Absolute Humidity (g/m³)", "CO2 Concentration (ppm)",
-            "Pressure (hPa)", "Gas Resistance (Ω)"
+            "気温 (°C)", "相対湿度 (%)",
+            "絶対湿度 (g/m³)", "CO2濃度 (ppm)",
+            "気圧 (hPa)", "ガス抵抗 (Ω)"
         ],
         vertical_spacing=0.1,
         horizontal_spacing=0.05
@@ -417,6 +342,21 @@ def create_dashboard(df_p2, df_p3, show_p2=True, show_p3=True):
 
     # Add traces for each parameter
     for param, (row, col) in param_positions.items():
+        # Add P1 data if available
+        if show_p1 and df_p1 is not None and not df_p1.empty and param in df_p1.columns:
+            p1_values = df_p1[param].dropna()
+            if len(p1_values) > 0 and len(p1_values.unique()) >= 2:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_p1['timestamp'],
+                        y=df_p1[param],
+                        mode='lines',
+                        name=f'P1 {param}',
+                        line=dict(color='green')
+                    ),
+                    row=row, col=col
+                )
+
         # Add P2 data if available
         if show_p2 and df_p2 is not None and not df_p2.empty and param in df_p2.columns:
             p2_values = df_p2[param].dropna()
@@ -449,6 +389,8 @@ def create_dashboard(df_p2, df_p3, show_p2=True, show_p3=True):
 
         # Calculate appropriate Y-axis range
         all_y_values = []
+        if show_p1 and df_p1 is not None and not df_p1.empty and param in df_p1.columns:
+            all_y_values.extend(df_p1[param].dropna().tolist())
         if show_p2 and df_p2 is not None and not df_p2.empty and param in df_p2.columns:
             all_y_values.extend(df_p2[param].dropna().tolist())
         if show_p3 and df_p3 is not None and not df_p3.empty and param in df_p3.columns:
@@ -480,7 +422,7 @@ def create_dashboard(df_p2, df_p3, show_p2=True, show_p3=True):
 
     # Update layout
     fig.update_layout(
-        title="Environmental Data Dashboard",
+        title="環境データダッシュボード",
         height=900,
         width=1200,
         showlegend=True,
@@ -505,15 +447,15 @@ def create_dashboard(df_p2, df_p3, show_p2=True, show_p3=True):
 
     return fig
 
-def update_graphs(args):
-    """Update graphs with fresh data."""
-    logger.info("Updating graphs...")
-
-    # Create output directory if it doesn't exist
-    output_dir = "output"
-    os.makedirs(output_dir, exist_ok=True)
+def main():
+    """Main function."""
+    # Parse command line arguments
+    args = parse_arguments()
 
     # Read data
+    logger.info(f"Reading P1 data from: {args.p1_path}")
+    df_p1 = read_csv_data(args.p1_path, args.days) if args.show_p1 else None
+
     logger.info(f"Reading P2 data from: {args.p2_path}")
     df_p2 = read_csv_data(args.p2_path, args.days) if args.show_p2 else None
 
@@ -521,107 +463,41 @@ def update_graphs(args):
     df_p3 = read_csv_data(args.p3_path, args.days) if args.show_p3 else None
 
     # Check if we have any data
-    if (df_p2 is None or df_p2.empty) and (df_p3 is None or df_p3.empty):
-        logger.error("No data available for either P2 or P3")
-        return False
+    if (df_p1 is None or df_p1.empty) and (df_p2 is None or df_p2.empty) and (df_p3 is None or df_p3.empty):
+        logger.error("No data available for P1, P2, or P3")
+        sys.exit(1)
 
     # Create dashboard
     logger.info("Creating dashboard")
-    dashboard = create_dashboard(df_p2, df_p3, args.show_p2, args.show_p3)
-
-    # Save dashboard
-    dashboard_path = os.path.join(output_dir, "dashboard.html")
-    logger.info(f"Saving dashboard to: {dashboard_path}")
-    dashboard.write_html(dashboard_path)
+    dashboard = create_dashboard(df_p1, df_p2, df_p3, args.show_p1, args.show_p2, args.show_p3)
 
     # Create individual graphs
     parameters = ["temperature", "humidity", "absolute_humidity", "co2", "pressure", "gas_resistance"]
+    graphs = {}
 
     for param in parameters:
         logger.info(f"Creating graph for {param}")
-        graph = generate_graph(param, df_p2, df_p3, args.show_p2, args.show_p3)
+        graph = generate_graph(param, df_p1, df_p2, df_p3, args.show_p1, args.show_p2, args.show_p3)
         if graph:
-            graph_path = os.path.join(output_dir, f"{param}.html")
+            graphs[param] = graph
+
+    # Save or display graphs
+    if args.output:
+        # Save dashboard
+        dashboard_path = f"{os.path.splitext(args.output)[0]}_dashboard.html"
+        logger.info(f"Saving dashboard to: {dashboard_path}")
+        dashboard.write_html(dashboard_path)
+
+        # Save individual graphs
+        for param, graph in graphs.items():
+            graph_path = f"{os.path.splitext(args.output)[0]}_{param}.html"
             logger.info(f"Saving {param} graph to: {graph_path}")
             graph.write_html(graph_path)
-
-    logger.info("Graphs updated successfully")
-    return True
-
-def start_update_thread(args):
-    """Start a thread to update graphs periodically."""
-    def update_loop():
-        while True:
-            try:
-                update_graphs(args)
-                logger.info(f"Next update in {args.interval} minutes")
-                time.sleep(args.interval * 60)
-            except Exception as e:
-                logger.error(f"Error in update loop: {e}")
-                time.sleep(60)  # Wait a minute before retrying
-
-    thread = threading.Thread(target=update_loop, daemon=True)
-    thread.start()
-    return thread
-
-def start_web_server(args):
-    """Start a Flask web server to serve the graphs."""
-    app = Flask(__name__)
-
-    # Define parameter labels for the template
-    param_labels = {
-        "temperature": "Temperature (°C)",
-        "humidity": "Relative Humidity (%)",
-        "absolute_humidity": "Absolute Humidity (g/m³)",
-        "co2": "CO2 Concentration (ppm)",
-        "pressure": "Pressure (hPa)",
-        "gas_resistance": "Gas Resistance (Ω)"
-    }
-
-    parameters = ["temperature", "humidity", "absolute_humidity", "co2", "pressure", "gas_resistance"]
-
-    @app.route('/')
-    def index():
-        """Render the main page."""
-        last_update = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        refresh_seconds = args.interval * 60
-
-        return render_template_string(
-            HTML_TEMPLATE,
-            last_update=last_update,
-            refresh_seconds=refresh_seconds,
-            days=args.days,
-            show_p2=args.show_p2,
-            show_p3=args.show_p3,
-            parameters=parameters,
-            param_labels=param_labels
-        )
-
-    @app.route('/<path:filename>')
-    def serve_file(filename):
-        """Serve static files from the output directory."""
-        return send_from_directory('output', filename)
-
-    # Start the Flask app
-    logger.info(f"Starting web server on port {args.port}")
-    app.run(host='0.0.0.0', port=args.port, debug=False)
-
-def main():
-    """Main function."""
-    # Parse command line arguments
-    args = parse_arguments()
-
-    # Initial update
-    success = update_graphs(args)
-    if not success:
-        logger.error("Failed to update graphs. Please check your data files.")
-        sys.exit(1)
-
-    # Start update thread
-    update_thread = start_update_thread(args)
-
-    # Start web server
-    start_web_server(args)
+    else:
+        # Save dashboard to HTML file
+        logger.info("Saving dashboard to output.html")
+        dashboard.write_html("output.html")
+        print("output.html をブラウザで開いてください")
 
 if __name__ == "__main__":
     main()

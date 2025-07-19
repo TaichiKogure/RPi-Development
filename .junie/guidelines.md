@@ -2791,3 +2791,5 @@ WebUI JavaScript 側のfetchは /api/graphs へアクセスしているか
 先ほどのコードで確認済み：OK ✅
 取得したデータに timestamp と temperature 等が存在しているか確認
 実際にブラウザの DevTools の「ネットワーク」→ /api/graphs?... のレスポンスで確認できます。
+
+# Additional action_Ver5.00Debug

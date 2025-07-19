@@ -118,7 +118,7 @@ Ver.4.53では、CSVファイルを直接読み込んで表示するグラフ表
 
 ```bash
 cd /path/to/p1_software_solo45/web_interface
-python graph_viewer_Ver3.py --days 7  # 過去7日間のデータを表示
+python graph_viewer_Ver4.py --days 7  # 過去7日間のデータを表示
 ```
 
 ### データのエクスポート
