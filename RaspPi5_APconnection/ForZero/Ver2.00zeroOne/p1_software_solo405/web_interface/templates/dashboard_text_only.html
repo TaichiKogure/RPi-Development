@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmental Data Dashboard (Text Only)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .dashboard-container {
+            padding: 20px;
+        }
+        .data-container {
+            margin-bottom: 30px;
+        }
+        .data-table {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        .data-table th {
+            background-color: #f8f9fa;
+        }
+        .refresh-info {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: right;
+            margin-top: 5px;
+        }
+        .card {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container dashboard-container">
+        <h1 class="mb-4">Environmental Data Dashboard (Text Only)</h1>
+        <p class="text-muted">Optimized for Raspberry Pi Zero 2W - Ver1.2</p>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Latest Sensor Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="latest-data-container"></div>
+                        <div class="refresh-info">Auto-refreshes every <span id="latest-data-refresh">30</span> seconds</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Connection Status</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="connection-status-container"></div>
+                        <div class="refresh-info">Auto-refreshes every <span id="connection-status-refresh">30</span> seconds</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Data Export</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="export-form" class="row g-3">
+                            <div class="col-md-4">
+                                <label for="device-select" class="form-label">Device:</label>
+                                <select id="device-select" class="form-select">
+                                    <option value="P4">P4</option>
+                                    <option value="P5">P5</option>
+                                    <option value="P6">P6</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="start-date" class="form-label">Start Date:</label>
+                                <input type="date" id="start-date" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="end-date" class="form-label">End Date:</label>
+                                <input type="date" id="end-date" class="form-control">
+                            </div>
+                            <div class="col-12 mt-3">
+                                <button type="button" id="export-button" class="btn btn-primary">Export CSV</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Historical Data Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="history-device-select" class="form-label">Device:</label>
+                            <select id="history-device-select" class="form-select" style="width: auto; display: inline-block;">
+                                <option value="P4">P4</option>
+                                <option value="P5">P5</option>
+                                <option value="P6">P6</option>
+                            </select>
+                            <label for="history-days-select" class="form-label ms-3">Time Range:</label>
+                            <select id="history-days-select" class="form-select" style="width: auto; display: inline-block;">
+                                <option value="1">Last 24 Hours</option>
+                                <option value="7">Last 7 Days</option>
+                                <option value="30">Last 30 Days</option>
+                            </select>
+                            <button id="load-history-button" class="btn btn-sm btn-outline-primary ms-3">Load Data</button>
+                        </div>
+                        <div id="history-data-container">
+                            <p class="text-muted">Select a device and time range, then click "Load Data" to view historical data summary.</p>
+                        </div>
+                        <div class="refresh-info">Data must be manually refreshed using the "Load Data" button</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to load latest data
+        function loadLatestData() {
+            $.get('/api/latest-data-table', function(data) {
+                $('#latest-data-container').html(data);
+            });
+        }
+
+        // Function to load connection status
+        function loadConnectionStatus() {
+            $.get('/api/connection-status-table', function(data) {
+                $('#connection-status-container').html(data);
+            });
+        }
+
+        // Function to load historical data summary
+        function loadHistoricalData() {
+            const device = $('#history-device-select').val();
+            const days = $('#history-days-select').val();
+            
+            $('#history-data-container').html('<p class="text-center"><i>Loading data...</i></p>');
+            
+            $.get(`/api/data/summary/${device}?days=${days}`, function(data) {
+                $('#history-data-container').html(data);
+            }).fail(function() {
+                $('#history-data-container').html('<p class="text-danger">Failed to load historical data. Please try again.</p>');
+            });
+        }
+
+        // Function to export data
+        function exportData() {
+            const device = $('#device-select').val();
+            const startDate = $('#start-date').val();
+            const endDate = $('#end-date').val();
+            
+            if (!startDate || !endDate) {
+                alert('Please select both start and end dates.');
+                return;
+            }
+            
+            window.location.href = `/api/data/export/${device}?start=${startDate}&end=${endDate}`;
+        }
+
+        // Initial load
+        $(document).ready(function() {
+            // Set default dates for export
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            $('#end-date').val(today.toISOString().split('T')[0]);
+            $('#start-date').val(yesterday.toISOString().split('T')[0]);
+            
+            // Load initial data
+            loadLatestData();
+            loadConnectionStatus();
+            
+            // Set up refresh intervals (30 seconds instead of 10 seconds)
+            const latestDataInterval = 30000;
+            const connectionStatusInterval = 30000;
+            
+            $('#latest-data-refresh').text(latestDataInterval / 1000);
+            $('#connection-status-refresh').text(connectionStatusInterval / 1000);
+            
+            setInterval(loadLatestData, latestDataInterval);
+            setInterval(loadConnectionStatus, connectionStatusInterval);
+            
+            // Set up event listeners
+            $('#load-history-button').click(loadHistoricalData);
+            $('#export-button').click(exportData);
+        });
+    </script>
+</body>
+</html>

@@ -1362,7 +1362,7 @@ if 'timestamp' in df.columns:
 
 ## Additional action_Ver.4.52 Debug2
 下記対応を実施する。データはG:\RPi-Development\RaspPi5_APconnection\Ver4.52内で実行する
- 問題の本質（2000年1月1日表示）[P1_app_simple45.py](../RaspPi5_APconnection_NGver/Ver4.52/p1_software_solo45/web_interface/P1_app_simple45.py)
+ 問題の本質（2000年1月1日表示）[P1_app_simple45.py](../NGver/Ver4.52/p1_software_solo45/web_interface/P1_app_simple45.py)
 plotly.js によるグラフ表示が "x" 軸のタイムスタンプを "数値（エポック）" と誤認識しています。
 Flask 側 /data/<parameter> API が返す JSON に含まれる "timestamp" が正しくフォーマットされていない可能性があります。
 
@@ -2164,7 +2164,7 @@ NameError: name 'DEFAULT_CONFIG' is not defined
 - Failed to import refactored modules from p1_software_solo405 package: No module named 'p1_software_solo405' 
 - Failed to import refactored modules from relative path: No module named 'p1_software_solo405' 
 - Cannot continue without required modules
-リファクタリング版の[P1_app_solo_new.py](../RaspPi5_APconnection/Ver4.61Debug/p1_software_solo405/web_interface/P1_app_solo_new.py)
+リファクタリング版の[P1_app_solo_new.py](../RaspPi5_APconnection/RPi5+Pico2_CO2andEnv/Ver4.61Debug/p1_software_solo405/web_interface/P1_app_solo_new.py)
 を正しく使うためにモジュールのインポートパスの問題を解決する必要があります
 
 - エラーログから判断すると、現在のシステムはを使用しようとしていますが、モジュールの読み込みに失敗しています。このリファクタリングされたモジュール構造を正しく使用できるよう、Pythonのモジュールパスやパッケージ構造の問題を解決する必要があります。 `P1_app_solo_new.py``p1_software_solo405`

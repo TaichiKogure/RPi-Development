@@ -1,0 +1,171 @@
+/* 
+ * Custom styles for the Environmental Data Dashboard
+ */
+
+body {
+    padding-top: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.container {
+    max-width: 1200px;
+}
+
+/* Card styles */
+.card {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    padding: 12px 16px;
+}
+
+.card-header h5 {
+    margin: 0;
+    font-weight: 600;
+    color: #343a40;
+}
+
+.card-body {
+    padding: 16px;
+}
+
+/* Graph container */
+.graph-container {
+    margin-bottom: 20px;
+    height: 400px;
+    background-color: #fff;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+/* Data table */
+.data-table {
+    margin-bottom: 20px;
+}
+
+.data-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    text-align: left;
+    padding: 8px;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.data-table td {
+    padding: 8px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Status indicators */
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.status-online {
+    background-color: #28a745;
+}
+
+.status-offline {
+    background-color: #dc3545;
+}
+
+/* Loading indicator */
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+/* Tabs */
+.nav-tabs {
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 16px;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    padding: 8px 16px;
+    margin-right: 4px;
+    border-radius: 4px 4px 0 0;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: transparent;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.nav-tabs .nav-link.active {
+    color: #495057;
+    background-color: #fff;
+    border-bottom: 3px solid #007bff;
+}
+
+/* Buttons */
+.btn-outline-primary {
+    color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-outline-primary:hover {
+    color: #fff;
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+/* Form controls */
+.form-control {
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    padding: 8px 12px;
+}
+
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card-header {
+        padding: 10px;
+    }
+    
+    .card-body {
+        padding: 12px;
+    }
+    
+    .graph-container {
+        height: 300px;
+    }
+    
+    .nav-tabs .nav-link {
+        padding: 6px 10px;
+        font-size: 14px;
+    }
+}
