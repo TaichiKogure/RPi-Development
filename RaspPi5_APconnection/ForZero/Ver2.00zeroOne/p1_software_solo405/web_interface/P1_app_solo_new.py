@@ -2,21 +2,22 @@
 # -*- coding: utf-8 -*-
 """
 Raspberry Pi 5 Environmental Data Web Interface for Solo Version
-Version: 4.0.0-solo
+Version: 2.0.0
 
 This module provides a web interface for visualizing environmental data
-collected from P2 and P3 sensor nodes with BME680 and MH-Z19C sensors. It displays real-time data,
+collected from P2, P3, P4, P5, and P6 sensor nodes with BME680 sensors. It displays real-time data,
 historical trends, and allows for data export.
 
 Features:
-- Real-time display of current sensor readings from both P2 and P3 (including CO2)
+- Real-time display of current sensor readings from P2, P3, P4, P5, and P6
 - Time-series graphs of historical data with flexible Y-axis ranges
-- Toggle options to show/hide P2 and P3 data on the same graph
+- Toggle options to show/hide device data on the same graph
 - Display of absolute humidity calculated from temperature and humidity
 - Data export in CSV format
 - Responsive design for mobile and desktop viewing
 - Auto-refresh functionality
-- Real-time signal strength display for both P2 and P3
+- Real-time signal strength display for all devices
+- Ver2.0 supports only BME680 sensors (no CO2 sensors)
 
 Requirements:
 - Python 3.7+

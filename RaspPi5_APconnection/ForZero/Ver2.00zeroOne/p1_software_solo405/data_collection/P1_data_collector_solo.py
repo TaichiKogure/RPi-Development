@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Raspberry Pi 5 Environmental Data Collection Module for Solo Version 4.0
-Version: 4.0.0-solo
+Raspberry Pi 5 Environmental Data Collection Module for Solo Version 2.0
+Version: 2.0.0-solo
 
-This module receives environmental data from P4, P5, and P6 Pico devices with BME680 and MH-Z19C sensors via WiFi,
+This module receives environmental data from P4, P5, and P6 Pico devices with BME680 sensors via WiFi,
 processes it, and stores it in CSV format for later analysis and visualization.
 
 Features:
 - Listens for incoming data from P4, P5, and P6 devices
-- Validates and processes received data (including CO2)
+- Validates and processes received data (BME680 sensors only, no CO2 sensors in Ver2.0)
 - Calculates absolute humidity from temperature and humidity data
 - Stores data in separate directories (RawData_P4, RawData_P5, and RawData_P6)
 - Handles connection errors and data validation
@@ -207,7 +207,9 @@ class DataCollector:
             if not file_exists:
                 self.csv_writers[device].writerow([
                     "timestamp", "device_id", "temperature", "humidity", 
-                    "pressure", "gas_resistance", "co2", "absolute_humidity"
+                    "pressure", "gas_resistance", 
+                    # "co2",  # CO2 column removed in Ver2.0 (BME680 only)
+                    "absolute_humidity"
                 ])
                 self.csv_files[device].flush()
 
@@ -223,7 +225,9 @@ class DataCollector:
             if not fixed_file_exists:
                 self.fixed_csv_writers[device].writerow([
                     "timestamp", "device_id", "temperature", "humidity", 
-                    "pressure", "gas_resistance", "co2", "absolute_humidity"
+                    "pressure", "gas_resistance", 
+                    # "co2",  # CO2 column removed in Ver2.0 (BME680 only)
+                    "absolute_humidity"
                 ])
                 self.fixed_csv_files[device].flush()
 
@@ -365,9 +369,9 @@ class DataCollector:
             "gas_resistance"
         ]
 
-        # Add CO2 to numeric fields if present
-        if "co2" in data:
-            numeric_fields.append("co2")
+        # CO2 validation removed in Ver2.0 (BME680 only)
+        # if "co2" in data:
+        #     numeric_fields.append("co2")
 
         for field in numeric_fields:
             try:
@@ -389,10 +393,10 @@ class DataCollector:
             logger.warning(f"Pressure out of range: {data['pressure']}")
             return False
 
-        # Validate CO2 range if present
-        if "co2" in data and not (400 <= float(data["co2"]) <= 5000):
-            logger.warning(f"CO2 out of range: {data['co2']}")
-            return False
+        # CO2 validation removed in Ver2.0 (BME680 only)
+        # if "co2" in data and not (400 <= float(data["co2"]) <= 5000):
+        #     logger.warning(f"CO2 out of range: {data['co2']}")
+        #     return False
 
         return True
 
@@ -423,11 +427,11 @@ class DataCollector:
             data["gas_resistance"]
         ]
 
-        # Add CO2 if present
-        if "co2" in data:
-            row_data.append(data["co2"])
-        else:
-            row_data.append("")  # Empty value for CO2
+        # CO2 data handling removed in Ver2.0 (BME680 only)
+        # if "co2" in data:
+        #     row_data.append(data["co2"])
+        # else:
+        #     row_data.append("")  # Empty value for CO2
 
         # Add absolute humidity
         row_data.append(absolute_humidity if absolute_humidity is not None else "")

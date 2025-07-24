@@ -20,10 +20,12 @@ logger = logging.getLogger(__name__)
 
 # Default configuration
 DEFAULT_CONFIG = {
-    "monitor_interval": 5,  # seconds
+    "monitor_interval": 80,  # seconds
     "api_port": 5002,
     "log_dir": "/var/lib/raspap_solo/logs",
     "devices": {
+        "P2": {"ip": "192.168.0.50", "mac": None},
+        "P3": {"ip": "192.168.0.51", "mac": None},
         "P4": {"ip": "192.168.0.101", "mac": None},
         "P5": {"ip": "192.168.0.102", "mac": None},
         "P6": {"ip": "192.168.0.103", "mac": None}

@@ -1,3 +1,10 @@
+# Ver2.1 zeroOne
+- 作業フォルダは下記 G:\RPi-Development\RaspPi5_APconnection\ForZero\Ver2.00zeroOne
+- 改定部位は日本語と英語のdocumentを作成して初心者にもわかりやすくする。documentにはVerのnumberingを実施する。
+- G:\RPi-Development\RaspPi5_APconnection\ForZero\Ver2.00zeroOne\p1_software_solo405のシステムにおいてP2,3,4,5,6の電波強度やpingを測定しターミナル上に定期的（80秒ごと）にレポートする機能を追加する
+- P1_ap_setup_solo.pyの機能を最新のVer2.0に適合するよう改訂する。また改訂内容は同一のap_setupディレクトリ内に日本語でレポートする。
+
+
 # Ver2.0 zeroOne
 - 作業フォルダは下記 G:\RPi-Development\RaspPi5_APconnection\ForZero\Ver2.00zeroOne
 - 改定部位は日本語と英語のdocumentを作成して初心者にもわかりやすくする。documentにはVerのnumberingを実施する。

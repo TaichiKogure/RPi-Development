@@ -19,7 +19,7 @@ from .api.server import create_api_app, run_api_server
 logger = logging.getLogger(__name__)
 
 class WiFiMonitor:
-    """Class to monitor WiFi connection quality with P2 and P3 devices."""
+    """Class to monitor WiFi connection quality with P2, P3, P4, P5, and P6 devices."""
 
     def __init__(self, config=None):
         """
@@ -31,7 +31,10 @@ class WiFiMonitor:
         self.config = config or DEFAULT_CONFIG.copy()
         self.connection_data = {
             "P2": {"history": []},
-            "P3": {"history": []}
+            "P3": {"history": []},
+            "P4": {"history": []},
+            "P5": {"history": []},
+            "P6": {"history": []}
         }
         self.lock = threading.Lock()
         self.running = False
@@ -131,7 +134,7 @@ class WiFiMonitor:
         Update the IP address for a device and force MAC re-resolution.
 
         Args:
-            device_id (str): The device ID (P2 or P3)
+            device_id (str): The device ID (P2, P3, P4, P5, or P6)
             new_ip (str): The new IP address for the device
         """
         if device_id not in self.config['devices']:

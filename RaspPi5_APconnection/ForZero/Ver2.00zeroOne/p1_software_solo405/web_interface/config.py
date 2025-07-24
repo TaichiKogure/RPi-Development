@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 DEFAULT_CONFIG = {
     "web_port": 80,
     "data_dir": "/var/lib/raspap_solo/data",
+    "rawdata_p2_dir": "RawData_P2",
+    "rawdata_p3_dir": "RawData_P3",
     "rawdata_p4_dir": "RawData_P4",
     "rawdata_p5_dir": "RawData_P5",
     "rawdata_p6_dir": "RawData_P6",
@@ -30,6 +32,8 @@ def ensure_data_directories(config=None):
     
     # Ensure data directories exist
     os.makedirs(config["data_dir"], exist_ok=True)
+    os.makedirs(os.path.join(config["data_dir"], config["rawdata_p2_dir"]), exist_ok=True)
+    os.makedirs(os.path.join(config["data_dir"], config["rawdata_p3_dir"]), exist_ok=True)
     os.makedirs(os.path.join(config["data_dir"], config["rawdata_p4_dir"]), exist_ok=True)
     os.makedirs(os.path.join(config["data_dir"], config["rawdata_p5_dir"]), exist_ok=True)
     os.makedirs(os.path.join(config["data_dir"], config["rawdata_p6_dir"]), exist_ok=True)

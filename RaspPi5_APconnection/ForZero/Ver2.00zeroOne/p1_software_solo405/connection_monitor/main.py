@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     """Main function to parse arguments and start the WiFi monitor."""
-    parser = argparse.ArgumentParser(description="Raspberry Pi 5 WiFi Connection Monitor - Solo Version 4.0")
+    parser = argparse.ArgumentParser(description="Raspberry Pi 5 WiFi Connection Monitor - Solo Version 2.1")
     parser.add_argument("--interval", type=int, default=DEFAULT_CONFIG["monitor_interval"],
                         help=f"Monitoring interval in seconds (default: {DEFAULT_CONFIG['monitor_interval']})")
     parser.add_argument("--interface", type=str, default=DEFAULT_CONFIG["interface"],

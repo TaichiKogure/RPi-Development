@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Raspberry Pi 5 Access Point Setup Script for Solo Version 4.0
-Version: 4.0.0-solo
+Raspberry Pi 5 Access Point Setup Script for Solo Version 2.1
+Version: 2.1.0
 
-This script configures the Raspberry Pi 5 as a WiFi access point for P2 and P3 devices
-with BME680 and MH-Z19C sensors. It handles the installation and configuration of necessary packages,
+This script configures the Raspberry Pi 5 as a WiFi access point for P2, P3, P4, P5, and P6 devices
+with BME680 sensors. It handles the installation and configuration of necessary packages,
 network interfaces, and services to create a standalone access point.
 
 Features:
@@ -148,7 +148,7 @@ def configure_dnsmasq(config):
     if os.path.exists(DNSMASQ_CONF) and not os.path.exists(f"{DNSMASQ_CONF}.orig"):
         shutil.copy2(DNSMASQ_CONF, f"{DNSMASQ_CONF}.orig")
 
-    dnsmasq_config = f"""# dnsmasq configuration for Raspberry Pi 5 AP Solo Ver4.0
+    dnsmasq_config = f"""# dnsmasq configuration for Raspberry Pi 5 AP Solo Ver2.1
 interface={config['ap_interface']}
 dhcp-range={config['ap_dhcp_range_start']},{config['ap_dhcp_range_end']},{config['ap_netmask']},{config['ap_dhcp_lease_time']}
 domain=wlan
@@ -425,7 +425,7 @@ def configure_ap():
 
 def main():
     """Main function to parse arguments and execute commands."""
-    parser = argparse.ArgumentParser(description="Raspberry Pi 5 Access Point Setup for Solo Version 4.0")
+    parser = argparse.ArgumentParser(description="Raspberry Pi 5 Access Point Setup for Solo Version 2.1")
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--configure", action="store_true", help="Configure the access point")
     group.add_argument("--enable", action="store_true", help="Enable the access point")

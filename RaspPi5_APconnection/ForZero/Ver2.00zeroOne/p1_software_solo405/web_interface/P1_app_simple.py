@@ -2,16 +2,17 @@
 # -*- coding: utf-8 -*-
 """
 Raspberry Pi 5 Environmental Data Web Interface - Simple Text-Only Version
-Version: 1.0.0
+Version: 2.0.0
 
 This module provides a simplified web interface for the environmental data collection system.
-It displays text-only information from P4, P5, and P6 Pico devices without graph rendering.
+It displays text-only information from P2, P3, P4, P5, and P6 Pico devices with BME680 sensors without graph rendering.
 
 Features:
-- Displays latest data from P4, P5, and P6 devices in text format
+- Displays latest data from P2, P3, P4, P5, and P6 devices in text format
 - Shows connection status for all devices
 - Provides data export functionality
 - Optimized for lightweight operation
+- Ver2.0 supports only BME680 sensors (no CO2 sensors)
 
 Requirements:
 - Python 3.7+
@@ -53,6 +54,8 @@ if parent_dir not in sys.path:
 DEFAULT_CONFIG = {
     "web_port": 80,
     "data_dir": "/var/lib/raspap_solo/data",
+    "rawdata_p2_dir": "RawData_P2",
+    "rawdata_p3_dir": "RawData_P3",
     "rawdata_p4_dir": "RawData_P4",
     "rawdata_p5_dir": "RawData_P5",
     "rawdata_p6_dir": "RawData_P6",
@@ -104,7 +107,7 @@ class DataVisualizer:
         import datetime
         import os
         
-        if device_id not in ["P4", "P5", "P6"]:
+        if device_id not in ["P2", "P3", "P4", "P5", "P6"]:
             return None
         
         try:
@@ -202,7 +205,7 @@ class DataVisualizer:
         @app.route('/api/device/<device_id>')
         def get_device_data(device_id):
             """Get the latest data for a specific device."""
-            if device_id not in ["P4", "P5", "P6"]:
+            if device_id not in ["P2", "P3", "P4", "P5", "P6"]:
                 return jsonify({"error": "Invalid device ID"}), 400
             
             data = self.get_latest_data()
@@ -214,7 +217,7 @@ class DataVisualizer:
         @app.route('/export/<device_id>')
         def export_data(device_id):
             """Export data to CSV for the specified device and date range."""
-            if device_id not in ["P4", "P5", "P6"]:
+            if device_id not in ["P2", "P3", "P4", "P5", "P6"]:
                 return jsonify({"error": "Invalid device ID"}), 400
             
             start_date = request.args.get('start_date')
@@ -357,7 +360,8 @@ HTML_TEMPLATE = """
             }
             
             let html = '<table>';
-            html += '<tr><th>Device</th><th>Timestamp</th><th>Temperature (°C)</th><th>Humidity (%)</th><th>Pressure (hPa)</th><th>Gas Resistance (Ω)</th><th>CO2 (ppm)</th><th>Absolute Humidity (g/m³)</th></tr>';
+            // Ver2.0: CO2 column removed as we're disabling CO2 sensor functionality
+            html += '<tr><th>Device</th><th>Timestamp</th><th>Temperature (°C)</th><th>Humidity (%)</th><th>Pressure (hPa)</th><th>Gas Resistance (Ω)</th><th>Absolute Humidity (g/m³)</th></tr>';
             
             for (const [deviceId, deviceData] of Object.entries(data)) {
                 if (deviceData && typeof deviceData === 'object') {
@@ -368,7 +372,7 @@ HTML_TEMPLATE = """
                         <td>${deviceData.humidity !== undefined ? deviceData.humidity : 'N/A'}</td>
                         <td>${deviceData.pressure !== undefined ? deviceData.pressure : 'N/A'}</td>
                         <td>${deviceData.gas_resistance !== undefined ? deviceData.gas_resistance : 'N/A'}</td>
-                        <td>${deviceData.co2 !== undefined ? deviceData.co2 : 'N/A'}</td>
+                        <!-- Ver2.0: CO2 data cell removed as we're disabling CO2 sensor functionality -->
                         <td>${deviceData.absolute_humidity !== undefined ? deviceData.absolute_humidity : 'N/A'}</td>
                     </tr>`;
                 }

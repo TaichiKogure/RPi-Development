@@ -1,10 +1,10 @@
 """
-Raspberry Pi 5 WiFi Connection Monitor for Solo Version 4.0
-Version: 4.0.0-solo
+Raspberry Pi 5 WiFi Connection Monitor for Solo Version 2.1
+Version: 2.1.0
 
 This module provides a compatibility layer for the refactored connection monitor.
 It imports and uses the refactored modules to maintain compatibility with the
-start_p1_solo.py script.
+start_p1_solo.py script. It supports monitoring P2, P3, P4, P5, and P6 devices.
 """
 
 import os
