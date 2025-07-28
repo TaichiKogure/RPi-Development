@@ -2,14 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d, UnivariateSpline
 
-# OCV-SOC lookup table (NMC/graphite)
-soc_pts = np.array([0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+# OCV-SOC table from literature
+soc_pts = np.linspace(0, 1, 11)
 ocv_pts = np.array([3.0519,3.6594,3.7167,3.7611,3.7915,3.8275,
                     3.8772,3.9401,4.0128,4.0923,4.1797])
 ocv_interp = interp1d(soc_pts, ocv_pts, kind='linear', fill_value='extrapolate')
 
 def ocv_from_soc(soc):
-    return float(ocv_interp(np.clip(soc,0.0,1.0)))
+    return float(ocv_interp(np.clip(soc, 0.0, 1.0)))
 
 def simulate_charge(cap_ah, c_rate, resistance, v_max=4.1797, end_current_ratio=0.05, dt=1.0):
     dt_h = dt / 3600.0
@@ -52,55 +52,48 @@ def simulate_discharge(cap_ah, c_rate, resistance, v_min=3.0519, dt=1.0):
     return np.array(soc_hist), np.array(cap_hist), np.array(v_hist)
 
 # degradation models
-def capacity_after_cycle(n, Q0=3.0, A=0.1, B=0.005):
+def capacity_after_cycle(n, Q0=3.0, A=0.1, B=0.05):
     return Q0 * (1 - A * (1 - np.exp(-B * n)))
 
-def resistance_after_cycle(n, R0=0.05, C=0.005, D=1.0):
+def resistance_after_cycle(n, R0=0.05, C=0.05, D=1.0):
     return R0 * (1 + C * (n**D))
 
-def run_cycles_degradation(num_cycles=50, c_rate=0.5):
-    results_charge = []
-    results_discharge = []
+def run_all_cycles(num_cycles=50, c_rate=0.5):
+    results = []
     for n in range(1, num_cycles+1):
         cap_n = capacity_after_cycle(n)
         res_n = resistance_after_cycle(n)
         soc_c, cap_c, v_c = simulate_charge(cap_n, c_rate, res_n)
         soc_d, cap_d, v_d = simulate_discharge(cap_n, c_rate, res_n)
-        results_charge.append((n, cap_c, v_c))
-        results_discharge.append((n, cap_d, v_d))
-    return results_charge, results_discharge
+        results.append((n, cap_c, v_c, cap_d, v_d))
+    return results
 
-def plot_degradation(results_charge, results_discharge):
-    plt.figure(figsize=(10,5))
-
-    # Discharge curves
-    plt.subplot(1,2,1)
-    for n, cap_d, v_d in results_discharge[::10]:
-        plt.plot(cap_d, v_d, label=f'Discharge cycle {n}')
-    cap_d_final, v_d_final = results_discharge[-1][1], results_discharge[-1][2]
-    spl_d = UnivariateSpline(cap_d_final, v_d_final, s=0.5)
-    xx_d = np.linspace(cap_d_final.min(), cap_d_final.max(), 500)
-    plt.plot(xx_d, spl_d(xx_d), 'k--', lw=2, label='Smoothed final discharge')
+def plot_all_smoothed(results, smoothing_s=0.001):
+    plt.figure(figsize=(12, 5))
+    # Charge side
+    plt.subplot(1,2,0+1)
+    for n, cap_c, v_c, _, _ in results:
+        spl = UnivariateSpline(cap_c, v_c, s=smoothing_s)
+        xs = np.linspace(cap_c.min(), cap_c.max(), 400)
+        plt.plot(xs, spl(xs), label=f'Ch {n}', lw=1)
     plt.xlabel('Capacity (Ah)')
     plt.ylabel('Voltage (V)')
-    plt.title('Discharge with degradation')
-    plt.legend(); plt.grid(True)
+    plt.title('Smoothed Charge Curves (all cycles)')
+    plt.grid(True)
 
-    # Charge curves
+    # Discharge side
     plt.subplot(1,2,2)
-    for n, cap_c, v_c in results_charge[::10]:
-        plt.plot(cap_c, v_c, label=f'Charge cycle {n}')
-    cap_c_final, v_c_final = results_charge[-1][1], results_charge[-1][2]
-    spl_c = UnivariateSpline(cap_c_final, v_c_final, s=0.5)
-    xx_c = np.linspace(cap_c_final.min(), cap_c_final.max(), 500)
-    plt.plot(xx_c, spl_c(xx_c), 'k--', lw=2, label='Smoothed final charge')
-    plt.xlabel('Capacity (Ah)')
+    for n, _, _, cap_d, v_d in results:
+        spl = UnivariateSpline(cap_d, v_d, s=smoothing_s)
+        xs = np.linspace(cap_d.min(), cap_d.max(), 400)
+        plt.plot(xs, spl(xs), label=f'Dis {n}', lw=1)
+    plt.xlabel('Discharged Capacity (Ah)')
     plt.ylabel('Voltage (V)')
-    plt.title('Charge with degradation')
-    plt.legend(); plt.grid(True)
-
+    plt.title('Smoothed Discharge Curves (all cycles)')
+    plt.grid(True)
     plt.tight_layout()
     plt.show()
-if __name__ == '__main__':
-    ch, dis = run_cycles_degradation(num_cycles=100, c_rate=0.5)
-    plot_degradation(ch, dis)
+
+if __name__=='__main__':
+    res = run_all_cycles(num_cycles=20, c_rate=0.5)
+    plot_all_smoothed(res, smoothing_s=0.05)
