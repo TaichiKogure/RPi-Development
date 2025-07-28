@@ -114,8 +114,8 @@
 
 2. データディレクトリを作成します：
    ```bash
-   sudo mkdir -p /var/lib/raspap/data
-   sudo chown -R $USER:$USER /var/lib/raspap/data
+   sudo mkdir -p /var/lib(FromThonny)/raspap/data
+   sudo chown -R $USER:$USER /var/lib(FromThonny)/raspap/data
    ```
 
 3. データコレクター用のsystemdサービスファイルを作成します：
@@ -272,7 +272,7 @@
   ```
 - データディレクトリが存在し、適切な権限を持っていることを確認します：
   ```bash
-  ls -la /var/lib/raspap/data
+  ls -la /var/lib(FromThonny)/raspap/data
   ```
 
 ### Webインターフェースの問題

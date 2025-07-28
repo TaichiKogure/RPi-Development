@@ -172,9 +172,9 @@ To back up the data:
    ```
 3. Copy the data files:
    ```bash
-   cp -r /var/lib/raspap_solo/data/RawData_P4 ~/backups/$(date +%Y-%m-%d)/
-   cp -r /var/lib/raspap_solo/data/RawData_P5 ~/backups/$(date +%Y-%m-%d)/
-   cp -r /var/lib/raspap_solo/data/RawData_P6 ~/backups/$(date +%Y-%m-%d)/
+   cp -r /var/lib(FromThonny)/raspap_solo/data/RawData_P4 ~/backups/$(date +%Y-%m-%d)/
+   cp -r /var/lib(FromThonny)/raspap_solo/data/RawData_P5 ~/backups/$(date +%Y-%m-%d)/
+   cp -r /var/lib(FromThonny)/raspap_solo/data/RawData_P6 ~/backups/$(date +%Y-%m-%d)/
    ```
 4. Optionally, compress the backup:
    ```bash
@@ -190,7 +190,7 @@ To clean up old data:
 1. SSH into the Raspberry Pi 5.
 2. Navigate to the data directory:
    ```bash
-   cd /var/lib/raspap_solo/data
+   cd /var/lib(FromThonny)/raspap_solo/data
    ```
 3. List all data files:
    ```bash

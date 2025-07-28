@@ -185,7 +185,7 @@ sudo python3 start_p1_solo.py
 2. ブラウザのコンソールでエラーを確認します（F12キーを押してデベロッパーツールを開く）
 3. データが存在することを確認します（CSVファイルを確認）：
    ```bash
-   ls -la /var/lib/raspap_solo/data
+   ls -la /var/lib(FromThonny)/raspap_solo/data
    ```
 
 ## メンテナンス
@@ -206,7 +206,7 @@ sudo python3 start_p1_solo.py
 
 古いデータファイルは自動的に管理されますが、手動でクリーンアップする場合は以下のコマンドを使用します：
 ```bash
-find /var/lib/raspap_solo/data -name "P2_*.csv" -mtime +30 -delete
+find /var/lib(FromThonny)/raspap_solo/data -name "P2_*.csv" -mtime +30 -delete
 ```
 （この例では、30日以上前のファイルを削除します）
 

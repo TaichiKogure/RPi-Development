@@ -52,11 +52,11 @@ CONNECTION_MONITOR_SCRIPT = os.path.join(SCRIPT_DIR, "connection_monitor", "P1_w
 
 # デフォルト設定
 DEFAULT_CONFIG = {
-    "data_dir": "/var/lib/raspap_solo/data",
+    "data_dir": "/var/lib(FromThonny)/raspap_solo/data",
     "rawdata_p2_dir": "RawData_P2",
     "rawdata_p3_dir": "RawData_P3",
-    "p2_csv_path": "/var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv",  # P2のCSVデータファイルのパス
-    "p3_csv_path": "/var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv",  # P3のCSVデータファイルのパス
+    "p2_csv_path": "/var/lib(FromThonny)/raspap_solo/data/RawData_P2/P2_fixed.csv",  # P2のCSVデータファイルのパス
+    "p3_csv_path": "/var/lib(FromThonny)/raspap_solo/data/RawData_P3/P3_fixed.csv",  # P3のCSVデータファイルのパス
     "web_port": 80,
     "api_port": 5001,
     "monitor_port": 5002,
@@ -247,7 +247,7 @@ def main():
     """Unified version that sets parameters inside the script (no CLI args needed)."""
     # 設定を直接コードに記載
     config = DEFAULT_CONFIG.copy()
-    config["data_dir"] = "/var/lib/raspap_solo/data"
+    config["data_dir"] = "/var/lib(FromThonny)/raspap_solo/data"
     config["p2_csv_path"] = os.path.join(config["data_dir"], config["rawdata_p2_dir"], "P2_fixed.csv")
     config["p3_csv_path"] = os.path.join(config["data_dir"], config["rawdata_p3_dir"], "P3_fixed.csv")
     config["web_port"] = 80

@@ -52,7 +52,7 @@ if parent_dir not in sys.path:
 # Default configuration
 DEFAULT_CONFIG = {
     "web_port": 80,
-    "data_dir": "/var/lib/raspap_solo/data",
+    "data_dir": "/var/lib(FromThonny)/raspap_solo/data",
     "rawdata_p4_dir": "RawData_P4",
     "rawdata_p5_dir": "RawData_P5",
     "rawdata_p6_dir": "RawData_P6",

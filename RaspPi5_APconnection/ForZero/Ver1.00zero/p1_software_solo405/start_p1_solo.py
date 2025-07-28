@@ -51,7 +51,7 @@ CONNECTION_MONITOR_SCRIPT = os.path.join(SCRIPT_DIR, "connection_monitor", "P1_w
 
 # Default configuration
 DEFAULT_CONFIG = {
-    "data_dir": "/var/lib/raspap_solo/data",
+    "data_dir": "/var/lib(FromThonny)/raspap_solo/data",
     "rawdata_p4_dir": "RawData_P4",
     "rawdata_p5_dir": "RawData_P5",
     "rawdata_p6_dir": "RawData_P6",

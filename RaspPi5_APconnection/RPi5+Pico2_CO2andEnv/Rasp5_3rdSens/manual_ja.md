@@ -63,8 +63,8 @@ sudo i2cdetect -y 1
 データを保存するディレクトリを作成します:
 
 ```bash
-sudo mkdir -p /var/lib/raspap_solo/data/RawData_P1
-sudo chmod 777 /var/lib/raspap_solo/data/RawData_P1
+sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P1
+sudo chmod 777 /var/lib(FromThonny)/raspap_solo/data/RawData_P1
 ```
 
 ### 6. プログラムのダウンロードと実行
@@ -127,7 +127,7 @@ sudo chmod 777 /var/lib/raspap_solo/data/RawData_P1
 CSVファイルの内容を確認するには:
 
 ```bash
-tail -n 10 /var/lib/raspap_solo/data/RawData_P1/P1_fixed.csv
+tail -n 10 /var/lib(FromThonny)/raspap_solo/data/RawData_P1/P1_fixed.csv
 ```
 
 ## トラブルシューティング

@@ -54,7 +54,7 @@ if parent_dir not in sys.path:
 # Define fallback configurations in case imports fail
 FALLBACK_DEFAULT_CONFIG = {
     "listen_port": 5000,
-    "data_dir": "/var/lib/raspap_solo/data",
+    "data_dir": "/var/lib(FromThonny)/raspap_solo/data",
     "rawdata_p2_dir": "RawData_P2",
     "rawdata_p3_dir": "RawData_P3",
     "api_port": 5001,

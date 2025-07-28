@@ -65,9 +65,9 @@ git clone https://github.com/yourusername/RaspPi5_APconnection.git
 3. データディレクトリを作成します：
 
 ```bash
-sudo mkdir -p /var/lib/raspap_solo/data/RawData_P2
-sudo mkdir -p /var/lib/raspap_solo/data/RawData_P3
-sudo chown -R pi:pi /var/lib/raspap_solo
+sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P2
+sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P3
+sudo chown -R pi:pi /var/lib(FromThonny)/raspap_solo
 ```
 
 4. システムを起動します：

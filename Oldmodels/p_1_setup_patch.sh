@@ -18,8 +18,8 @@ source envmonitor-venv/bin/activate
 pip install flask flask-socketio pandas plotly
 
 # 5. Create data directory outside raspap scope
-sudo mkdir -p /var/lib/envmonitor/data
-sudo chown -R $USER:$USER /var/lib/envmonitor/data
+sudo mkdir -p /var/lib(FromThonny)/envmonitor/data
+sudo chown -R $USER:$USER /var/lib(FromThonny)/envmonitor/data
 
 # 6. Clone project or copy files manually (adjust as needed)
 # git clone https://github.com/example/RaspPi5_APconnection.git

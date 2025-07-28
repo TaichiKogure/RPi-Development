@@ -1016,8 +1016,8 @@ import plotly.graph_objs as go
 
 app = Flask(__name__)
 
-CSV_FILE_P2 = "/var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv"
-CSV_FILE_P3 = "/var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv"
+CSV_FILE_P2 = "/var/lib(FromThonny)/raspap_solo/data/RawData_P2/P2_fixed.csv"
+CSV_FILE_P3 = "/var/lib(FromThonny)/raspap_solo/data/RawData_P3/P3_fixed.csv"
 
 TEMPLATE = """
 <!DOCTYPE html>
@@ -1421,8 +1421,8 @@ G:\RPi-Development\RaspPi5_APconnection\Ver4.53
 ```python
 
 # Default file paths
-DEFAULT_P2_PATH = "/var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv"
-DEFAULT_P3_PATH = "/var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv"
+DEFAULT_P2_PATH = "/var/lib(FromThonny)/raspap_solo/data/RawData_P2/P2_fixed.csv"
+DEFAULT_P3_PATH = "/var/lib(FromThonny)/raspap_solo/data/RawData_P3/P3_fixed.csv"
 
 def parse_arguments():
     """Parse command line arguments."""
@@ -1925,7 +1925,7 @@ main() 内で直接パスやポートを指定するように変更（既に修�
 def main():
     """Unified version that sets parameters inside the script (no CLI args needed)."""
     # 設定を直接コードに記載
-    DEFAULT_CONFIG["data_dir"] = "/var/lib/raspap_solo/data"
+    DEFAULT_CONFIG["data_dir"] = "/var/lib(FromThonny)/raspap_solo/data"
     DEFAULT_CONFIG["p2_csv_path"] = os.path.join(DEFAULT_CONFIG["data_dir"], DEFAULT_CONFIG["rawdata_p2_dir"], "P2_fixed.csv")
     DEFAULT_CONFIG["p3_csv_path"] = os.path.join(DEFAULT_CONFIG["data_dir"], DEFAULT_CONFIG["rawdata_p3_dir"], "P3_fixed.csv")
     DEFAULT_CONFIG["web_port"] = 80
@@ -2327,7 +2327,7 @@ def latest():
     import json
     try:
         # 仮：直近のデータファイルを読み込んで返す
-        with open("/var/lib/raspap_solo/data/latest_data.json") as f:
+        with open("/var/lib(FromThonny)/raspap_solo/data/latest_data.json") as f:
             data = json.load(f)
         return jsonify(data)
     except Exception as e:
@@ -2418,7 +2418,7 @@ def get_graph_data():
     show_p3 = request.args.get('show_p3', default='true') == 'true'
 
     result = {}
-    data_dir = '/var/lib/raspap_solo/data/'  # CSV格納ディレクトリ（既存と合わせて調整）
+    data_dir = '/var/lib(FromThonny)/raspap_solo/data/'  # CSV格納ディレクトリ（既存と合わせて調整）
 
     try:
         if show_p2:
@@ -2696,7 +2696,7 @@ print(f"Loading: {self.data_dir}/{device_id}.csv")
 
 
 ```bash
-ls -l /var/lib/raspap_solo/data/
+ls -l /var/lib(FromThonny)/raspap_solo/data/
 ```
 中身のタイムスタンプが過去になっていないかも確認：
 
@@ -2776,7 +2776,7 @@ Flask側 /api/graphs がこの新GraphGeneratorを使っているか
 from flask import jsonify, request
 from graph_generator import GraphGenerator
 
-graph_generator = GraphGenerator(data_dir='/var/lib/raspap_solo/data')
+graph_generator = GraphGenerator(data_dir='/var/lib(FromThonny)/raspap_solo/data')
 
 @app.route('/api/graphs')
 def api_graphs():

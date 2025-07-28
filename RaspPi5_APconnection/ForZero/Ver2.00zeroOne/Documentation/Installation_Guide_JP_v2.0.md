@@ -94,13 +94,13 @@ BME680センサーをRaspberry Pi Pico 2Wに以下のように接続します：
 
 8. **データディレクトリの作成**：
    ```bash
-   sudo mkdir -p /var/lib/raspap_solo/data
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P2
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P3
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P4
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P5
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P6
-   sudo chown -R pi:pi /var/lib/raspap_solo
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P2
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P3
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P4
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P5
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P6
+   sudo chown -R pi:pi /var/lib(FromThonny)/raspap_solo
    ```
 
 9. **自動起動の設定（オプション）**：
@@ -183,7 +183,7 @@ BME680センサーをRaspberry Pi Pico 2Wに以下のように接続します：
 
 2. **データ収集の確認**：
    ```bash
-   ls -la /var/lib/raspap_solo/data/RawData_P2/
+   ls -la /var/lib(FromThonny)/raspap_solo/data/RawData_P2/
    ```
 
    各センサーノード用のCSVファイルが作成されていることが確認できるはずです。

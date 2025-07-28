@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_CONFIG = {
     "monitor_interval": 80,  # seconds
     "api_port": 5002,
-    "log_dir": "/var/lib/raspap_solo/logs",
+    "log_dir": "/var/lib(FromThonny)/raspap_solo/logs",
     "devices": {
         "P2": {"ip": "192.168.0.50", "mac": None},
         "P3": {"ip": "192.168.0.51", "mac": None},

@@ -117,17 +117,17 @@ For each Pico 2W, connect the BME680 sensor and MH-Z19B CO2 sensor as follows:
 
 2. Create necessary directories:
    ```bash
-   sudo mkdir -p /var/lib/raspap_solo/data
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P4
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P5
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P6
-   sudo mkdir -p /var/lib/raspap_solo/logs
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P4
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P5
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P6
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/logs
    sudo mkdir -p /var/log
    ```
 
 3. Set permissions:
    ```bash
-   sudo chown -R pi:pi /var/lib/raspap_solo
+   sudo chown -R pi:pi /var/lib(FromThonny)/raspap_solo
    ```
 
 ### 3.5 Configure Access Point
@@ -234,16 +234,16 @@ Repeat the steps from 4.3, but use the P6-specific files:
 
 1. On P1, check if data is being collected:
    ```bash
-   ls -la /var/lib/raspap_solo/data/RawData_P4
-   ls -la /var/lib/raspap_solo/data/RawData_P5
-   ls -la /var/lib/raspap_solo/data/RawData_P6
+   ls -la /var/lib(FromThonny)/raspap_solo/data/RawData_P4
+   ls -la /var/lib(FromThonny)/raspap_solo/data/RawData_P5
+   ls -la /var/lib(FromThonny)/raspap_solo/data/RawData_P6
    ```
 
 2. View the latest data:
    ```bash
-   tail -n 10 /var/lib/raspap_solo/data/RawData_P4/P4_fixed.csv
-   tail -n 10 /var/lib/raspap_solo/data/RawData_P5/P5_fixed.csv
-   tail -n 10 /var/lib/raspap_solo/data/RawData_P6/P6_fixed.csv
+   tail -n 10 /var/lib(FromThonny)/raspap_solo/data/RawData_P4/P4_fixed.csv
+   tail -n 10 /var/lib(FromThonny)/raspap_solo/data/RawData_P5/P5_fixed.csv
+   tail -n 10 /var/lib(FromThonny)/raspap_solo/data/RawData_P6/P6_fixed.csv
    ```
 
 ### 5.4 Access Web Interface

@@ -50,13 +50,13 @@ sudo ~/envmonitor-venv/bin/python3 start_p1_solo.py
   ```
 - Verify data is being collected:
   ```bash
-  ls -la /var/lib/raspap_solo/data/RawData_P4/
-  ls -la /var/lib/raspap_solo/data/RawData_P5/
-  ls -la /var/lib/raspap_solo/data/RawData_P6/
+  ls -la /var/lib(FromThonny)/raspap_solo/data/RawData_P4/
+  ls -la /var/lib(FromThonny)/raspap_solo/data/RawData_P5/
+  ls -la /var/lib(FromThonny)/raspap_solo/data/RawData_P6/
   ```
 - Examine the CSV files:
   ```bash
-  head -n 5 /var/lib/raspap_solo/data/RawData_P4/P4_fixed.csv
+  head -n 5 /var/lib(FromThonny)/raspap_solo/data/RawData_P4/P4_fixed.csv
   ```
 
 **Expected Results:**
@@ -176,7 +176,7 @@ sudo ~/envmonitor-venv/bin/python3 start_p1_solo.py
   ```
 - Check disk usage growth:
   ```bash
-  du -sh /var/lib/raspap_solo/data/
+  du -sh /var/lib(FromThonny)/raspap_solo/data/
   ```
 
 **Expected Results:**

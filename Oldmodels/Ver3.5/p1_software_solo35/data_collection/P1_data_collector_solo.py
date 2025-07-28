@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 # Default configuration
 DEFAULT_CONFIG = {
     "listen_port": 5000,
-    "data_dir": "/var/lib/raspap_solo/data",
+    "data_dir": "/var/lib(FromThonny)/raspap_solo/data",
     "api_port": 5001,
     "max_file_size_mb": 10,
     "rotation_interval_days": 7,

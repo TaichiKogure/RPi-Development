@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 # Default configuration
 DEFAULT_CONFIG = {
     "web_port": 80,
-    "data_dir": "/var/lib/raspap/data",
+    "data_dir": "/var/lib(FromThonny)/raspap/data",
     "api_url": "http://localhost:5001",
     "refresh_interval": 30,  # seconds
     "graph_points": 100,  # number of data points to show in graphs

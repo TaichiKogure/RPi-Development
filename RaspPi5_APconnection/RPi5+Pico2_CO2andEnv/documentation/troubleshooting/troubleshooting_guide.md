@@ -227,12 +227,12 @@ Before troubleshooting specific issues, it's helpful to use these diagnostic too
 3. **Data files not being created**
    - Check permissions on the data directory:
      ```bash
-     ls -la /var/lib/raspap/data
+     ls -la /var/lib(FromThonny)/raspap/data
      ```
    - Verify that the data directory exists:
      ```bash
-     sudo mkdir -p /var/lib/raspap/data
-     sudo chown -R pi:pi /var/lib/raspap/data
+     sudo mkdir -p /var/lib(FromThonny)/raspap/data
+     sudo chown -R pi:pi /var/lib(FromThonny)/raspap/data
      ```
    - Check disk space:
      ```bash
@@ -257,7 +257,7 @@ Before troubleshooting specific issues, it's helpful to use these diagnostic too
 2. **Web interface shows "No data available"**
    - Check if data files exist:
      ```bash
-     ls -la /var/lib/raspap/data
+     ls -la /var/lib(FromThonny)/raspap/data
      ```
    - Verify that the data collector is running and receiving data
    - Check the web interface logs for errors:
@@ -271,7 +271,7 @@ Before troubleshooting specific issues, it's helpful to use these diagnostic too
    - Check if the required JavaScript libraries are loading (check browser console)
    - Verify that the data format is correct:
      ```bash
-     head -n 10 /var/lib/raspap/data/P2_*.csv
+     head -n 10 /var/lib(FromThonny)/raspap/data/P2_*.csv
      ```
 
 ### Connection Monitor Issues
@@ -514,7 +514,7 @@ The Pico 2W devices use LED blink patterns to indicate error codes:
 1. **Backup Important Data**
    ```bash
    # Create a backup of data files
-   sudo tar -czvf ~/data_backup.tar.gz /var/lib/raspap/data
+   sudo tar -czvf ~/data_backup.tar.gz /var/lib(FromThonny)/raspap/data
 
    # Backup configuration files
    sudo tar -czvf ~/config_backup.tar.gz /etc/hostapd /etc/dnsmasq.conf /etc/dhcpcd.conf
@@ -534,7 +534,7 @@ The Pico 2W devices use LED blink patterns to indicate error codes:
    - Reinstall required packages and services
    - Restore data files:
      ```bash
-     sudo mkdir -p /var/lib/raspap/data
+     sudo mkdir -p /var/lib(FromThonny)/raspap/data
      sudo tar -xzvf ~/data_backup.tar.gz -C /
      ```
 
@@ -563,17 +563,17 @@ The Pico 2W devices use LED blink patterns to indicate error codes:
      ```
    - Copy the files to the data directory:
      ```bash
-     sudo cp -r /tmp/var/lib/raspap/data/* /var/lib/raspap/data/
+     sudo cp -r /tmp/var/lib(FromThonny)/raspap/data/* /var/lib(FromThonny)/raspap/data/
      ```
 
 2. **Repair Corrupted CSV Files**
    - Check for corrupted files:
      ```bash
-     find /var/lib/raspap/data -name "*.csv" -exec file {} \;
+     find /var/lib(FromThonny)/raspap/data -name "*.csv" -exec file {} \;
      ```
    - Fix CSV headers if needed:
      ```bash
-     for f in /var/lib/raspap/data/*.csv; do
+     for f in /var/lib(FromThonny)/raspap/data/*.csv; do
        if ! head -1 "$f" | grep -q "timestamp"; then
          echo "timestamp,device_id,temperature,humidity,pressure,gas_resistance,co2_level" > /tmp/header
          cat "$f" >> /tmp/header
@@ -586,7 +586,7 @@ The Pico 2W devices use LED blink patterns to indicate error codes:
    - If you have multiple partial data files, you can merge them:
      ```bash
      # First, ensure all files have headers
-     for f in /var/lib/raspap/data/P2_*.csv; do
+     for f in /var/lib(FromThonny)/raspap/data/P2_*.csv; do
        if ! head -1 "$f" | grep -q "timestamp"; then
          echo "timestamp,device_id,temperature,humidity,pressure,gas_resistance,co2_level" > /tmp/header
          cat "$f" >> /tmp/header
@@ -595,13 +595,13 @@ The Pico 2W devices use LED blink patterns to indicate error codes:
      done
 
      # Then merge files (skipping headers except for the first file)
-     head -1 "$(ls /var/lib/raspap/data/P2_*.csv | head -1)" > /var/lib/raspap/data/P2_merged.csv
-     for f in /var/lib/raspap/data/P2_*.csv; do
-       tail -n +2 "$f" >> /var/lib/raspap/data/P2_merged.csv
+     head -1 "$(ls /var/lib(FromThonny)/raspap/data/P2_*.csv | head -1)" > /var/lib(FromThonny)/raspap/data/P2_merged.csv
+     for f in /var/lib(FromThonny)/raspap/data/P2_*.csv; do
+       tail -n +2 "$f" >> /var/lib(FromThonny)/raspap/data/P2_merged.csv
      done
 
      # Sort by timestamp
-     sort -t, -k1,1 /var/lib/raspap/data/P2_merged.csv > /var/lib/raspap/data/P2_sorted.csv
+     sort -t, -k1,1 /var/lib(FromThonny)/raspap/data/P2_merged.csv > /var/lib(FromThonny)/raspap/data/P2_sorted.csv
      ```
 
 For additional assistance or if you encounter issues not covered in this guide, please refer to the [Raspberry Pi documentation](https://www.raspberrypi.org/documentation/) or the [MicroPython documentation](https://docs.micropython.org/).

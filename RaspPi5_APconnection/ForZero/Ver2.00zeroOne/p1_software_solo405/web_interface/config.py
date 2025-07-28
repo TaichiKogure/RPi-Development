@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 # Default configuration
 DEFAULT_CONFIG = {
     "web_port": 80,
-    "data_dir": "/var/lib/raspap_solo/data",
+    "data_dir": "/var/lib(FromThonny)/raspap_solo/data",
     "rawdata_p2_dir": "RawData_P2",
     "rawdata_p3_dir": "RawData_P3",
     "rawdata_p4_dir": "RawData_P4",

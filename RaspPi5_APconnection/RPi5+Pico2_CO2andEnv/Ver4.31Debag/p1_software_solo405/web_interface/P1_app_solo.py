@@ -57,7 +57,7 @@ logger = logging.getLogger(__name__)
 # Default configuration
 DEFAULT_CONFIG = {
     "web_port": 80,
-    "data_dir": "/var/lib/raspap_solo/data",
+    "data_dir": "/var/lib(FromThonny)/raspap_solo/data",
     "rawdata_p2_dir": "RawData_P2",
     "rawdata_p3_dir": "RawData_P3",
     "api_url": "http://localhost:5001",
@@ -152,9 +152,9 @@ class DataVisualizer:
 
         # Explicitly specify the data directories
         if device_id == "P2":
-            full_dir = "/var/lib/raspap_solo/data/RawData_P2"
+            full_dir = "/var/lib(FromThonny)/raspap_solo/data/RawData_P2"
         else:  # P3
-            full_dir = "/var/lib/raspap_solo/data/RawData_P3"
+            full_dir = "/var/lib(FromThonny)/raspap_solo/data/RawData_P3"
         if not os.path.exists(full_dir):
             logger.warning(f"Directory not found: {full_dir}")
             return None

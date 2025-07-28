@@ -10,8 +10,8 @@ Usage:
     python graph_viewer_Ver4.py [--p2-path PATH] [--p3-path PATH]
 
 Options:
-    --p2-path PATH    Path to P2 CSV data file (default: /var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv)
-    --p3-path PATH    Path to P3 CSV data file (default: /var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv)
+    --p2-path PATH    Path to P2 CSV data file (default: /var/lib(FromThonny)/raspap_solo/data/RawData_P2/P2_fixed.csv)
+    --p3-path PATH    Path to P3 CSV data file (default: /var/lib(FromThonny)/raspap_solo/data/RawData_P3/P3_fixed.csv)
 """
 
 import os
@@ -37,8 +37,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Default file paths
-DEFAULT_P2_PATH = "/var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv"
-DEFAULT_P3_PATH = "/var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv"
+DEFAULT_P2_PATH = "/var/lib(FromThonny)/raspap_solo/data/RawData_P2/P2_fixed.csv"
+DEFAULT_P3_PATH = "/var/lib(FromThonny)/raspap_solo/data/RawData_P3/P3_fixed.csv"
 
 def parse_arguments():
     """Parse command line arguments."""

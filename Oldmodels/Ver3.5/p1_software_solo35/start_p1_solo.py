@@ -51,7 +51,7 @@ CONNECTION_MONITOR_SCRIPT = os.path.join(SCRIPT_DIR, "connection_monitor", "P1_w
 
 # Default configuration
 DEFAULT_CONFIG = {
-    "data_dir": "/var/lib/raspap_solo/data",
+    "data_dir": "/var/lib(FromThonny)/raspap_solo/data",
     "web_port": 80,
     "api_port": 5001,
     "monitor_port": 5002,

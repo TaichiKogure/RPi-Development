@@ -182,7 +182,7 @@ P1の設定は`p1_software_solo405/data_collection/config.py`に保存されて�
 
 ```python
 DEFAULT_CONFIG = {
-    "data_dir": "/var/lib/raspap_solo/data",
+    "data_dir": "/var/lib(FromThonny)/raspap_solo/data",
     "rawdata_p2_dir": "RawData_P2",
     "rawdata_p3_dir": "RawData_P3",
     "rawdata_p4_dir": "RawData_P4",

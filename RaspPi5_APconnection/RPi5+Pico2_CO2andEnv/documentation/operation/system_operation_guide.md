@@ -223,10 +223,10 @@ If a service is not working correctly, you can restart it:
 2. If disk space is low, you can remove old data files:
    ```bash
    # List data files by size
-   du -h /var/lib/raspap/data | sort -h
+   du -h /var/lib(FromThonny)/raspap/data | sort -h
 
    # Remove old files (example: files older than 30 days)
-   find /var/lib/raspap/data -name "*.csv" -type f -mtime +30 -delete
+   find /var/lib(FromThonny)/raspap/data -name "*.csv" -type f -mtime +30 -delete
    ```
 
 ### System Updates
@@ -297,7 +297,7 @@ If a service is not working correctly, you can restart it:
 
 2. Create a backup of the data directory:
    ```bash
-   sudo tar -czvf ~/environmental_data_backup_$(date +%Y%m%d).tar.gz /var/lib/raspap/data
+   sudo tar -czvf ~/environmental_data_backup_$(date +%Y%m%d).tar.gz /var/lib(FromThonny)/raspap/data
    ```
 
 3. Copy the backup file to another device or storage medium:

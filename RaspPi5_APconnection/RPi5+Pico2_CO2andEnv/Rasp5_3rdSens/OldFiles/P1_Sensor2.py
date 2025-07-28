@@ -25,7 +25,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # --- Constants ---
-DATA_DIR = "/var/lib/raspap_solo/data/RawData_P1"
+DATA_DIR = "/var/lib(FromThonny)/raspap_solo/data/RawData_P1"
 FIXED_CSV_PATH = os.path.join(DATA_DIR, "P1_fixed.csv")
 SAMPLING_INTERVAL = 30  # seconds
 BME680_I2C_ADDR = 0x77  # BME680 I2C address

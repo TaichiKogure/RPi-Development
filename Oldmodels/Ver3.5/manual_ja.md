@@ -63,8 +63,8 @@
 6. **P1ソフトウェアのセットアップ**
    ```bash
    cd ~/RaspPi5_APconnection/Ver3.5
-   sudo mkdir -p /var/lib/raspap_solo/data
-   sudo chmod 777 /var/lib/raspap_solo/data
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data
+   sudo chmod 777 /var/lib(FromThonny)/raspap_solo/data
    sudo mkdir -p /var/log
    sudo touch /var/log/ap_setup_solo.log /var/log/data_collector_solo.log /var/log/web_interface_solo.log /var/log/wifi_monitor_solo.log /var/log/p1_startup_solo.log
    sudo chmod 666 /var/log/ap_setup_solo.log /var/log/data_collector_solo.log /var/log/web_interface_solo.log /var/log/wifi_monitor_solo.log /var/log/p1_startup_solo.log

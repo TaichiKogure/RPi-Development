@@ -223,10 +223,10 @@
 2. ディスク容量が少ない場合は、古いデータファイルを削除できます：
    ```bash
    # サイズ別にデータファイルを一覧表示
-   du -h /var/lib/raspap/data | sort -h
+   du -h /var/lib(FromThonny)/raspap/data | sort -h
 
    # 古いファイルを削除（例：30日以上前のファイル）
-   find /var/lib/raspap/data -name "*.csv" -type f -mtime +30 -delete
+   find /var/lib(FromThonny)/raspap/data -name "*.csv" -type f -mtime +30 -delete
    ```
 
 ### システムアップデート
@@ -297,7 +297,7 @@
 
 2. データディレクトリのバックアップを作成します：
    ```bash
-   sudo tar -czvf ~/environmental_data_backup_$(date +%Y%m%d).tar.gz /var/lib/raspap/data
+   sudo tar -czvf ~/environmental_data_backup_$(date +%Y%m%d).tar.gz /var/lib(FromThonny)/raspap/data
    ```
 
 3. バックアップファイルを別のデバイスまたはストレージメディアにコピーします：

@@ -227,12 +227,12 @@
 3. **データファイルが作成されない**
    - データディレクトリの権限を確認：
      ```bash
-     ls -la /var/lib/raspap/data
+     ls -la /var/lib(FromThonny)/raspap/data
      ```
    - データディレクトリが存在することを確認：
      ```bash
-     sudo mkdir -p /var/lib/raspap/data
-     sudo chown -R pi:pi /var/lib/raspap/data
+     sudo mkdir -p /var/lib(FromThonny)/raspap/data
+     sudo chown -R pi:pi /var/lib(FromThonny)/raspap/data
      ```
    - ディスク容量を確認：
      ```bash
@@ -257,7 +257,7 @@
 2. **Webインターフェースに「データがありません」と表示される**
    - データファイルが存在するか確認：
      ```bash
-     ls -la /var/lib/raspap/data
+     ls -la /var/lib(FromThonny)/raspap/data
      ```
    - データコレクターが実行されデータを受信していることを確認
    - Webインターフェースのエラーログを確認：
@@ -271,7 +271,7 @@
    - 必要なJavaScriptライブラリが読み込まれているか確認（ブラウザコンソールを確認）
    - データ形式が正しいことを確認：
      ```bash
-     head -n 10 /var/lib/raspap/data/P2_*.csv
+     head -n 10 /var/lib(FromThonny)/raspap/data/P2_*.csv
      ```
 
 ### 接続モニターの問題
@@ -514,7 +514,7 @@ Pico 2WデバイスはLEDの点滅パターンを使用してエラーコード�
 1. **重要なデータのバックアップ**
    ```bash
    # データファイルのバックアップを作成
-   sudo tar -czvf ~/data_backup.tar.gz /var/lib/raspap/data
+   sudo tar -czvf ~/data_backup.tar.gz /var/lib(FromThonny)/raspap/data
 
    # 設定ファイルのバックアップ
    sudo tar -czvf ~/config_backup.tar.gz /etc/hostapd /etc/dnsmasq.conf /etc/dhcpcd.conf
@@ -534,7 +534,7 @@ Pico 2WデバイスはLEDの点滅パターンを使用してエラーコード�
    - 必要なパッケージとサービスを再インストール
    - データファイルを復元：
      ```bash
-     sudo mkdir -p /var/lib/raspap/data
+     sudo mkdir -p /var/lib(FromThonny)/raspap/data
      sudo tar -xzvf ~/data_backup.tar.gz -C /
      ```
 
@@ -563,17 +563,17 @@ Pico 2WデバイスはLEDの点滅パターンを使用してエラーコード�
      ```
    - ファイルをデータディレクトリにコピー：
      ```bash
-     sudo cp -r /tmp/var/lib/raspap/data/* /var/lib/raspap/data/
+     sudo cp -r /tmp/var/lib(FromThonny)/raspap/data/* /var/lib(FromThonny)/raspap/data/
      ```
 
 2. **破損したCSVファイルの修復**
    - 破損したファイルを確認：
      ```bash
-     find /var/lib/raspap/data -name "*.csv" -exec file {} \;
+     find /var/lib(FromThonny)/raspap/data -name "*.csv" -exec file {} \;
      ```
    - 必要に応じてCSVヘッダーを修正：
      ```bash
-     for f in /var/lib/raspap/data/*.csv; do
+     for f in /var/lib(FromThonny)/raspap/data/*.csv; do
        if ! head -1 "$f" | grep -q "timestamp"; then
          echo "timestamp,device_id,temperature,humidity,pressure,gas_resistance,co2_level" > /tmp/header
          cat "$f" >> /tmp/header
@@ -586,7 +586,7 @@ Pico 2WデバイスはLEDの点滅パターンを使用してエラーコード�
    - 複数の部分的なデータファイルがある場合、それらを結合できます：
      ```bash
      # まず、すべてのファイルにヘッダーがあることを確認
-     for f in /var/lib/raspap/data/P2_*.csv; do
+     for f in /var/lib(FromThonny)/raspap/data/P2_*.csv; do
        if ! head -1 "$f" | grep -q "timestamp"; then
          echo "timestamp,device_id,temperature,humidity,pressure,gas_resistance,co2_level" > /tmp/header
          cat "$f" >> /tmp/header
@@ -595,13 +595,13 @@ Pico 2WデバイスはLEDの点滅パターンを使用してエラーコード�
      done
 
      # 次に、ファイルを結合（最初のファイル以外のヘッダーをスキップ）
-     head -1 "$(ls /var/lib/raspap/data/P2_*.csv | head -1)" > /var/lib/raspap/data/P2_merged.csv
-     for f in /var/lib/raspap/data/P2_*.csv; do
-       tail -n +2 "$f" >> /var/lib/raspap/data/P2_merged.csv
+     head -1 "$(ls /var/lib(FromThonny)/raspap/data/P2_*.csv | head -1)" > /var/lib(FromThonny)/raspap/data/P2_merged.csv
+     for f in /var/lib(FromThonny)/raspap/data/P2_*.csv; do
+       tail -n +2 "$f" >> /var/lib(FromThonny)/raspap/data/P2_merged.csv
      done
 
      # タイムスタンプでソート
-     sort -t, -k1,1 /var/lib/raspap/data/P2_merged.csv > /var/lib/raspap/data/P2_sorted.csv
+     sort -t, -k1,1 /var/lib(FromThonny)/raspap/data/P2_merged.csv > /var/lib(FromThonny)/raspap/data/P2_sorted.csv
      ```
 
 このガイドで扱われていない問題が発生した場合や追加の支援が必要な場合は、[Raspberry Piのドキュメント](https://www.raspberrypi.org/documentation/)や[MicroPythonのドキュメント](https://docs.micropython.org/)を参照してください。

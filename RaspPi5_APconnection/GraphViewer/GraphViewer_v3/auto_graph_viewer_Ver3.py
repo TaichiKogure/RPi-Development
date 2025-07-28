@@ -11,8 +11,8 @@ Usage:
     python auto_graph_viewer_Ver4.py [--p2-path PATH] [--p3-path PATH] [--port PORT]
 
 Options:
-    --p2-path PATH    Path to P2 CSV data file (default: /var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv)
-    --p3-path PATH    Path to P3 CSV data file (default: /var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv)
+    --p2-path PATH    Path to P2 CSV data file (default: /var/lib(FromThonny)/raspap_solo/data/RawData_P2/P2_fixed.csv)
+    --p3-path PATH    Path to P3 CSV data file (default: /var/lib(FromThonny)/raspap_solo/data/RawData_P3/P3_fixed.csv)
     --port PORT       Port for the web server (default: 8050)
     --interval MINS   Refresh interval in minutes (default: 5)
 """
@@ -43,8 +43,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Default file paths
-DEFAULT_P2_PATH = "/var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv"
-DEFAULT_P3_PATH = "/var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv"
+DEFAULT_P2_PATH = "/var/lib(FromThonny)/raspap_solo/data/RawData_P2/P2_fixed.csv"
+DEFAULT_P3_PATH = "/var/lib(FromThonny)/raspap_solo/data/RawData_P3/P3_fixed.csv"
 DEFAULT_PORT = 8050
 DEFAULT_INTERVAL = 5  # minutes
 

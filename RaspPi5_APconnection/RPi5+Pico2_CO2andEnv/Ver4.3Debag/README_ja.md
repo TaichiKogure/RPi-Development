@@ -110,9 +110,9 @@ def get_historical_data(self, device_id, days):
 
     # 明示的にデータディレクトリを指定
     if device_id == "P2":
-        full_dir = "/var/lib/raspap_solo/data/RawData_P2"
+        full_dir = "/var/lib(FromThonny)/raspap_solo/data/RawData_P2"
     else:  # P3
-        full_dir = "/var/lib/raspap_solo/data/RawData_P3"
+        full_dir = "/var/lib(FromThonny)/raspap_solo/data/RawData_P3"
     if not os.path.exists(full_dir):
         return None
 

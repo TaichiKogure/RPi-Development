@@ -74,7 +74,7 @@ logger = logging.getLogger(__name__)
 # Default configuration
 DEFAULT_CONFIG = {
     "web_port": 80,
-    "data_dir": "/var/lib/raspap_solo/data",
+    "data_dir": "/var/lib(FromThonny)/raspap_solo/data",
     "rawdata_p2_dir": "RawData_P2",
     "rawdata_p3_dir": "RawData_P3",
     "refresh_interval": 10,  # seconds for sensor data refresh
@@ -83,8 +83,8 @@ DEFAULT_CONFIG = {
     "data_collector_api_url": "http://localhost:5001",  # API URL for data collector
     "connection_monitor_api_url": "http://localhost:5002",  # API URL for connection monitor
     "default_days": 1,  # Default number of days to display in graphs
-    "p2_csv_path": "/var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv",  # Default P2 CSV path
-    "p3_csv_path": "/var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv"   # Default P3 CSV path
+    "p2_csv_path": "/var/lib(FromThonny)/raspap_solo/data/RawData_P2/P2_fixed.csv",  # Default P2 CSV path
+    "p3_csv_path": "/var/lib(FromThonny)/raspap_solo/data/RawData_P3/P3_fixed.csv"   # Default P3 CSV path
 }
 
 # Initialize Flask app

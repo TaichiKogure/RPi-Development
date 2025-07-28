@@ -49,8 +49,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Default file paths
-DEFAULT_P2_PATH = "/var/lib/raspap_solo/data/RawData_P2/P2_fixed.csv"
-DEFAULT_P3_PATH = "/var/lib/raspap_solo/data/RawData_P3/P3_fixed.csv"
+DEFAULT_P2_PATH = "/var/lib(FromThonny)/raspap_solo/data/RawData_P2/P2_fixed.csv"
+DEFAULT_P3_PATH = "/var/lib(FromThonny)/raspap_solo/data/RawData_P3/P3_fixed.csv"
 
 def parse_arguments():
     """Parse command line arguments."""

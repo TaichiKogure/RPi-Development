@@ -56,7 +56,7 @@ logger = logging.getLogger(__name__)
 # Default configuration
 DEFAULT_CONFIG = {
     "web_port": 80,
-    "data_dir": "/var/lib/raspap_solo/data",
+    "data_dir": "/var/lib(FromThonny)/raspap_solo/data",
     "api_url": "http://localhost:5001",
     "monitor_api_url": "http://localhost:5002",
     "refresh_interval": 30,  # seconds

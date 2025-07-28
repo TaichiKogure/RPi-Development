@@ -126,8 +126,8 @@ This guide provides step-by-step instructions for setting up the Raspberry Pi 5 
 
 2. Create a data directory:
    ```bash
-   sudo mkdir -p /var/lib/raspap/data
-   sudo chown -R $USER:$USER /var/lib/raspap/data
+   sudo mkdir -p /var/lib(FromThonny)/raspap/data
+   sudo chown -R $USER:$USER /var/lib(FromThonny)/raspap/data
    ```
 
 3. Create a systemd service file for the data collector:
@@ -284,7 +284,7 @@ This guide provides step-by-step instructions for setting up the Raspberry Pi 5 
   ```
 - Verify that the data directory exists and has the correct permissions:
   ```bash
-  ls -la /var/lib/raspap/data
+  ls -la /var/lib(FromThonny)/raspap/data
   ```
 
 ### Web Interface Issues

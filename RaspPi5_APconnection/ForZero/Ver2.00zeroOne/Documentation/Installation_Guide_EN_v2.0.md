@@ -94,13 +94,13 @@ Connect the BME680 sensor to the Raspberry Pi Pico 2W as follows:
 
 8. **Create Data Directories**:
    ```bash
-   sudo mkdir -p /var/lib/raspap_solo/data
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P2
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P3
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P4
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P5
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P6
-   sudo chown -R pi:pi /var/lib/raspap_solo
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P2
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P3
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P4
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P5
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P6
+   sudo chown -R pi:pi /var/lib(FromThonny)/raspap_solo
    ```
 
 9. **Set Up Autostart (Optional)**:
@@ -183,7 +183,7 @@ After setting up all components, verify that the system is working correctly:
 
 2. **Check Data Collection**:
    ```bash
-   ls -la /var/lib/raspap_solo/data/RawData_P2/
+   ls -la /var/lib(FromThonny)/raspap_solo/data/RawData_P2/
    ```
 
    You should see CSV files being created for each sensor node.

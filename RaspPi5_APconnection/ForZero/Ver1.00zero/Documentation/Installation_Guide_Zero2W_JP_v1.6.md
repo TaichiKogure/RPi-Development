@@ -119,17 +119,17 @@
 
 2. 必要なディレクトリを作成します：
    ```bash
-   sudo mkdir -p /var/lib/raspap_solo/data
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P4
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P5
-   sudo mkdir -p /var/lib/raspap_solo/data/RawData_P6
-   sudo mkdir -p /var/lib/raspap_solo/logs
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P4
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P5
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data/RawData_P6
+   sudo mkdir -p /var/lib(FromThonny)/raspap_solo/logs
    sudo mkdir -p /var/log
    ```
 
 3. 権限を設定します：
    ```bash
-   sudo chown -R pi:pi /var/lib/raspap_solo
+   sudo chown -R pi:pi /var/lib(FromThonny)/raspap_solo
    ```
 
 ### 3.5 アクセスポイントの設定
@@ -274,16 +274,16 @@ Ver1.5では、Raspberry Pi Zero 2Wの電源投入時に自動的にシステム
 
 1. P1でデータが収集されているか確認します：
    ```bash
-   ls -la /var/lib/raspap_solo/data/RawData_P4
-   ls -la /var/lib/raspap_solo/data/RawData_P5
-   ls -la /var/lib/raspap_solo/data/RawData_P6
+   ls -la /var/lib(FromThonny)/raspap_solo/data/RawData_P4
+   ls -la /var/lib(FromThonny)/raspap_solo/data/RawData_P5
+   ls -la /var/lib(FromThonny)/raspap_solo/data/RawData_P6
    ```
 
 2. 最新のデータを表示します：
    ```bash
-   tail -n 10 /var/lib/raspap_solo/data/RawData_P4/P4_fixed.csv
-   tail -n 10 /var/lib/raspap_solo/data/RawData_P5/P5_fixed.csv
-   tail -n 10 /var/lib/raspap_solo/data/RawData_P6/P6_fixed.csv
+   tail -n 10 /var/lib(FromThonny)/raspap_solo/data/RawData_P4/P4_fixed.csv
+   tail -n 10 /var/lib(FromThonny)/raspap_solo/data/RawData_P5/P5_fixed.csv
+   tail -n 10 /var/lib(FromThonny)/raspap_solo/data/RawData_P6/P6_fixed.csv
    ```
 
 ### 6.4 Webインターフェースへのアクセス

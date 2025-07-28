@@ -70,10 +70,10 @@ cd RaspPi5_APconnection
 データとログを保存するディレクトリを作成します：
 
 ```bash
-sudo mkdir -p /var/lib/raspap_solo/data
-sudo mkdir -p /var/lib/raspap_solo/logs
-sudo chmod 755 /var/lib/raspap_solo/data
-sudo chmod 755 /var/lib/raspap_solo/logs
+sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data
+sudo mkdir -p /var/lib(FromThonny)/raspap_solo/logs
+sudo chmod 755 /var/lib(FromThonny)/raspap_solo/data
+sudo chmod 755 /var/lib(FromThonny)/raspap_solo/logs
 ```
 
 ### 7. アクセスポイントの設定
