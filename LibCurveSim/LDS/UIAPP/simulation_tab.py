@@ -13,6 +13,9 @@ import numpy as np
 import threading
 import time
 
+# Import font configuration for Japanese text support
+import font_config
+
 
 class SimulationTab:
     """
@@ -297,13 +300,18 @@ class SimulationTab:
         ax1 = self.fig.add_subplot(1, 2, 1)
         ax2 = self.fig.add_subplot(1, 2, 2)
         
-        # Plot charge curves
-        for result in results:
-            if result['cycle'] % 5 == 0 or result['cycle'] == 1:  # Plot every 5th cycle and the first cycle
+        # Plot charge curves (using voltage arrays from results)
+        cycles = results['cycles']
+        voltages = results['voltage']
+        
+        for i, cycle in enumerate(cycles):
+            if cycle % 5 == 0 or cycle == 1:  # Plot every 5th cycle and the first cycle
+                # Create capacity array for charge curve (0 to max capacity)
+                capacity_array = np.linspace(0, results['capacity'][i], len(voltages[i]))
                 ax1.plot(
-                    result['charge']['capacity'],
-                    result['charge']['voltage'],
-                    label=f"Cycle {result['cycle']}"
+                    capacity_array,
+                    voltages[i],
+                    label=f"Cycle {cycle}"
                 )
         
         ax1.set_xlabel('Capacity (Ah)')
@@ -312,13 +320,17 @@ class SimulationTab:
         ax1.grid(True)
         ax1.legend()
         
-        # Plot discharge curves
-        for result in results:
-            if result['cycle'] % 5 == 0 or result['cycle'] == 1:  # Plot every 5th cycle and the first cycle
+        # Plot discharge curves (reverse voltage arrays for discharge)
+        for i, cycle in enumerate(cycles):
+            if cycle % 5 == 0 or cycle == 1:  # Plot every 5th cycle and the first cycle
+                # Create discharged capacity array (max capacity to 0)
+                capacity_array = np.linspace(results['capacity'][i], 0, len(voltages[i]))
+                # Reverse voltage array for discharge
+                discharge_voltage = voltages[i][::-1]
                 ax2.plot(
-                    result['discharge']['capacity'],
-                    result['discharge']['voltage'],
-                    label=f"Cycle {result['cycle']}"
+                    capacity_array,
+                    discharge_voltage,
+                    label=f"Cycle {cycle}"
                 )
         
         ax2.set_xlabel('Discharged Capacity (Ah)')
@@ -333,29 +345,30 @@ class SimulationTab:
         results = self.app.simulation_results
         
         # Calculate capacity retention
-        retention = self.app.simulator.calculate_capacity_retention(results)
+        retention_values = self.app.simulator.calculate_capacity_retention(results)
+        cycles = results['cycles']
         
         # Create subplot
         ax = self.fig.add_subplot(1, 1, 1)
         
         # Plot capacity retention
-        ax.plot(retention['cycles'], retention['retention'], 'o-')
+        ax.plot(cycles, retention_values, 'o-')
         ax.set_xlabel('Cycle Number')
-        ax.set_ylabel('Capacity Retention')
+        ax.set_ylabel('Capacity Retention (%)')
         ax.set_title('Capacity Retention vs Cycle')
         ax.grid(True)
         
         # Set y-axis limits
-        ax.set_ylim(0, 1.05)
+        ax.set_ylim(0, 105)
     
     def _plot_resistance_growth(self):
         """Plot resistance growth."""
         # Get results
         results = self.app.simulation_results
         
-        # Extract cycle numbers and resistances
-        cycles = [result['cycle'] for result in results]
-        resistances = [result['resistance'] for result in results]
+        # Extract cycle numbers and resistances from results dictionary
+        cycles = results['cycles']
+        resistances = results['resistance']
         
         # Create subplot
         ax = self.fig.add_subplot(1, 1, 1)

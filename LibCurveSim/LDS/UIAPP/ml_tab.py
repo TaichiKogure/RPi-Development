@@ -13,6 +13,9 @@ import numpy as np
 import os
 import threading
 
+# Import font configuration for Japanese text support
+import font_config
+
 
 class MLTab:
     """
