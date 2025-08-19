@@ -35,9 +35,9 @@ try:
     from p1_software_solo405.connection_monitor.config import DEFAULT_CONFIG, ensure_log_directory
     from p1_software_solo405.connection_monitor.monitor import WiFiMonitor
     from p1_software_solo405.connection_monitor.utils.console import print_connection_status
-    logger.info("Successfully imported refactored modules from p1_software_solo405 package")
+    logger.info("Successfully imported refactored modules from p1_software_Zero package")
 except ImportError as e:
-    logger.error(f"Failed to import refactored modules from p1_software_solo405 package: {e}")
+    logger.error(f"Failed to import refactored modules from p1_software_Zero package: {e}")
     
     # 相対パスからのインポートを試みる
     try:
@@ -82,9 +82,9 @@ def main():
     try:
         # リファクタリングされたパッケージ構造からのインポートを試みる
         from p1_software_solo405.connection_monitor.main import main as refactored_main
-        logger.info("Successfully imported main function from p1_software_solo405 package")
+        logger.info("Successfully imported main function from p1_software_Zero package")
     except ImportError as e:
-        logger.error(f"Failed to import main function from p1_software_solo405 package: {e}")
+        logger.error(f"Failed to import main function from p1_software_Zero package: {e}")
         
         # 相対パスからのインポートを試みる
         try:

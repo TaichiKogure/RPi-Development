@@ -86,13 +86,13 @@ The solution involved several changes:
        # Try to import from the refactored package structure
        from p1_software_solo405.data_collection.config import DEFAULT_CONFIG, MONITOR_CONFIG
        from p1_software_solo405.data_collection.main import DataCollector, main as refactored_main
-       logger.info("Successfully imported refactored modules from p1_software_solo405 package")
+       logger.info("Successfully imported refactored modules from p1_software_Zero package")
        # Use the refactored implementation
        if __name__ == "__main__":
            refactored_main()
            sys.exit(0)
    except ImportError as e:
-       logger.warning(f"Failed to import from p1_software_solo405 package: {e}")
+       logger.warning(f"Failed to import from p1_software_Zero package: {e}")
        
        # Try to import from relative path
        try:

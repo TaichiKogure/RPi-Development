@@ -87,13 +87,13 @@ sudo ~/envmonitor-venv/bin/python3 start_p1_solo.py
 データ収集システムを実行するには、以下のコマンドを使用します：
 
 ```bash
-python -m p1_software_solo405.data_collection.main [--port PORT] [--data-dir DIR]
+python -m p1_software_Zero.data_collection.main [--port PORT] [--data-dir DIR]
 ```
 
 または、後方互換性のために：
 
 ```bash
-python p1_software_solo405/data_collection/P1_data_collector_solo.py [--port PORT] [--data-dir DIR]
+python p1_software_Zero/data_collection/P1_data_collector_solo.py [--port PORT] [--data-dir DIR]
 ```
 
 オプション：
@@ -105,13 +105,13 @@ python p1_software_solo405/data_collection/P1_data_collector_solo.py [--port POR
 Webインターフェースを実行するには、以下のコマンドを使用します：
 
 ```bash
-python -m p1_software_solo405.web_interface.main [--port PORT] [--data-dir DIR] [--debug]
+python -m p1_software_Zero.web_interface.main [--port PORT] [--data-dir DIR] [--debug]
 ```
 
 または、後方互換性のために：
 
 ```bash
-python p1_software_solo405/web_interface/P1_app_solo.py [--port PORT] [--data-dir DIR] [--debug]
+python p1_software_Zero/web_interface/P1_app_solo.py [--port PORT] [--data-dir DIR] [--debug]
 ```
 
 オプション：

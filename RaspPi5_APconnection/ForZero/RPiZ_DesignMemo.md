@@ -1,3 +1,11 @@
+# Ver2.11 zeroOne
+- 作業フォルダは下記 G:\RPi-Development\RaspPi5_APconnection\ForZero\Ver2.11zeroOne
+- 改定部位は日本語と英語のdocumentを作成して初心者にもわかりやすくする。documentにはVerのnumberingを実施する。
+- P1に対してもBME680を接続して気温、相対湿度、絶対湿度、ガス抵抗のデータを取得し、p２以降のデータユニットと同じく可視化とデータ蓄積を行うよう改良する。
+- P1の改良に合わせてインストールマニュアルや構造説明のdocumentを一新する。すべて日本語と英語で作成する。
+
+
+
 # Ver2.1 zeroOne
 - 作業フォルダは下記 G:\RPi-Development\RaspPi5_APconnection\ForZero\Ver2.00zeroOne
 - 改定部位は日本語と英語のdocumentを作成して初心者にもわかりやすくする。documentにはVerのnumberingを実施する。

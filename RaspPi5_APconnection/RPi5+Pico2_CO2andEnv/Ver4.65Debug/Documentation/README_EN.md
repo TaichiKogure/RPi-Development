@@ -87,13 +87,13 @@ If you need to run individual services separately, you can use the following com
 To run the data collection system, use the following command:
 
 ```bash
-python -m p1_software_solo405.data_collection.main [--port PORT] [--data-dir DIR]
+python -m p1_software_Zero.data_collection.main [--port PORT] [--data-dir DIR]
 ```
 
 Or, for backward compatibility:
 
 ```bash
-python p1_software_solo405/data_collection/P1_data_collector_solo.py [--port PORT] [--data-dir DIR]
+python p1_software_Zero/data_collection/P1_data_collector_solo.py [--port PORT] [--data-dir DIR]
 ```
 
 Options:
@@ -105,13 +105,13 @@ Options:
 To run the web interface, use the following command:
 
 ```bash
-python -m p1_software_solo405.web_interface.main [--port PORT] [--data-dir DIR] [--debug]
+python -m p1_software_Zero.web_interface.main [--port PORT] [--data-dir DIR] [--debug]
 ```
 
 Or, for backward compatibility:
 
 ```bash
-python p1_software_solo405/web_interface/P1_app_solo.py [--port PORT] [--data-dir DIR] [--debug]
+python p1_software_Zero/web_interface/P1_app_solo.py [--port PORT] [--data-dir DIR] [--debug]
 ```
 
 Options:

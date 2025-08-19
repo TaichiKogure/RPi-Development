@@ -39,7 +39,7 @@ The system operates as follows:
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
    source ~/envmonitor-venv/bin/activate
-   sudo python3 p1_software_solo405/start_p1_solo.py
+   sudo python3 p1_software_Zero/start_p1_solo.py
    ```
 
 ### 2.2 Starting P4, P5, P6 (Raspberry Pi Pico 2W)
@@ -134,7 +134,7 @@ The dashboard displays the following information:
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
    source ~/envmonitor-venv/bin/activate
-   sudo python3 p1_software_solo405/connection_monitor/P1_wifi_monitor_solo.py --status
+   sudo python3 p1_software_Zero/connection_monitor/P1_wifi_monitor_solo.py --status
    ```
 3. This will display the current connection status for all devices.
 
@@ -239,7 +239,7 @@ To update the environmental monitoring software:
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
    source ~/envmonitor-venv/bin/activate
-   sudo python3 p1_software_solo405/start_p1_solo.py --restart
+   sudo python3 p1_software_Zero/start_p1_solo.py --restart
    ```
 
 ### 6.3 Updating P4, P5, P6 Firmware
@@ -293,7 +293,7 @@ To manage logs:
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
    source ~/envmonitor-venv/bin/activate
-   sudo python3 p1_software_solo405/ap_setup/P1_ap_setup_solo.py --configure
+   sudo python3 p1_software_Zero/ap_setup/P1_ap_setup_solo.py --configure
    ```
 
 #### Data Collection Not Working
@@ -306,7 +306,7 @@ To manage logs:
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
    source ~/envmonitor-venv/bin/activate
-   sudo python3 p1_software_solo405/data_collection/P1_data_collector_solo.py
+   sudo python3 p1_software_Zero/data_collection/P1_data_collector_solo.py
    ```
 3. Check the logs for errors:
    ```bash
@@ -323,7 +323,7 @@ To manage logs:
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
    source ~/envmonitor-venv/bin/activate
-   sudo python3 p1_software_solo405/web_interface/P1_app_solo.py
+   sudo python3 p1_software_Zero/web_interface/P1_app_solo.py
    ```
 3. Check the logs for errors:
    ```bash

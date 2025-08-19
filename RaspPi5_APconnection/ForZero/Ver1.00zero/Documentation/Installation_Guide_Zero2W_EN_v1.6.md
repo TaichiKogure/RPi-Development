@@ -138,7 +138,7 @@ For each Pico 2W (P4, P5, P6), connect the BME680 sensor and MH-Z19B CO2 sensor 
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
    source ~/envmonitor-venv/bin/activate
-   sudo python3 p1_software_solo405/ap_setup/P1_ap_setup_solo.py --configure
+   sudo python3 p1_software_Zero/ap_setup/P1_ap_setup_solo.py --configure
    ```
    
    Note: In Ver1.6, the access point is configured with the SSID "RaspberryPi5_AP_Solo2" and IP address "192.168.0.2".
@@ -221,7 +221,7 @@ In Ver1.5, functionality has been added to automatically start the system when t
 3. Create the systemd service:
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
-   sudo python3 p1_software_solo405/start_p1_solo_v1.5.py --create-service
+   sudo python3 p1_software_Zero/start_p1_solo_v1.5.py --create-service
    ```
 4. Verify that the service was created successfully:
    ```bash
@@ -258,7 +258,7 @@ In Ver1.5, functionality has been added to automatically start the system when t
    ```
 4. Start the P1 services:
    ```bash
-   sudo python3 p1_software_solo405/start_p1_solo_v1.5.py
+   sudo python3 p1_software_Zero/start_p1_solo_v1.5.py
    ```
 
 ### 6.2 Test P4, P5, P6 Connections
@@ -267,7 +267,7 @@ In Ver1.5, functionality has been added to automatically start the system when t
 2. Wait for them to connect to P1's access point (SSID: "RaspberryPi5_AP_Solo2").
 3. Check the connection status on P1:
    ```bash
-   sudo python3 p1_software_solo405/connection_monitor/monitor_v1.2.py --status
+   sudo python3 p1_software_Zero/connection_monitor/monitor_v1.2.py --status
    ```
 
 ### 6.3 Verify Data Collection
@@ -304,13 +304,13 @@ In Ver1.5, functionality has been added to automatically start the system when t
     ```
   - Reconfigure the access point:
     ```bash
-    sudo python3 p1_software_solo405/ap_setup/P1_ap_setup_solo.py --configure
+    sudo python3 p1_software_Zero/ap_setup/P1_ap_setup_solo.py --configure
     ```
 
 - **Data collection not working**
   - Check the data collection service:
     ```bash
-    sudo python3 p1_software_solo405/data_collection/P1_data_collector_solo_v1.2.py --status
+    sudo python3 p1_software_Zero/data_collection/P1_data_collector_solo_v1.2.py --status
     ```
   - Check the logs:
     ```bash
@@ -320,7 +320,7 @@ In Ver1.5, functionality has been added to automatically start the system when t
 - **Web interface not working**
   - Check the web interface service:
     ```bash
-    sudo python3 p1_software_solo405/web_interface/P1_app_simple_v1.2.py --status
+    sudo python3 p1_software_Zero/web_interface/P1_app_simple_v1.2.py --status
     ```
   - Check the logs:
     ```bash

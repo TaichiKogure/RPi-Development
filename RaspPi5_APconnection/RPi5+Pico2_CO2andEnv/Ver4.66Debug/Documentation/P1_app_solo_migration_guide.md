@@ -31,9 +31,9 @@ try:
     try:
         from p1_software_solo405.web_interface.main import WebInterface, main as refactored_main
         from p1_software_solo405.web_interface.config import DEFAULT_CONFIG
-        logger.info("Successfully imported refactored modules from p1_software_solo405 package")
+        logger.info("Successfully imported refactored modules from p1_software_Zero package")
     except ImportError as e:
-        logger.warning(f"Failed to import refactored modules from p1_software_solo405 package: {e}")
+        logger.warning(f"Failed to import refactored modules from p1_software_Zero package: {e}")
         
         # Try to import using relative path
         try:
@@ -135,9 +135,9 @@ try:
     try:
         from p1_software_solo405.web_interface.main import WebInterface, main as refactored_main
         from p1_software_solo405.web_interface.config import DEFAULT_CONFIG
-        logger.info("Successfully imported refactored modules from p1_software_solo405 package")
+        logger.info("Successfully imported refactored modules from p1_software_Zero package")
     except ImportError as e:
-        logger.warning(f"Failed to import refactored modules from p1_software_solo405 package: {e}")
+        logger.warning(f"Failed to import refactored modules from p1_software_Zero package: {e}")
         
         # Try to import using relative path
         try:

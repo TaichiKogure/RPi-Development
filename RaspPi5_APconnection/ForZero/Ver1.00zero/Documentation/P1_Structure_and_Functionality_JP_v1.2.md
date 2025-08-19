@@ -182,7 +182,7 @@ P1を起動するには、以下のコマンドを実行します：
 
 ```bash
 cd /path/to/RaspPi5_APconnection/ForZero/Ver1.00zero
-python3 p1_software_solo405/start_p1_solo.py
+python3 p1_software_Zero/start_p1_solo.py
 ```
 
 Ver1.2の最適化されたコンポーネントを使用するには、以下のように起動スクリプトを修正する必要があります：

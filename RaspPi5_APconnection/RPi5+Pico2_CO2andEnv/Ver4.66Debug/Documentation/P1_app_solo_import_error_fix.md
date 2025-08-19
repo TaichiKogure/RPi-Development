@@ -34,12 +34,12 @@ Cannot continue without required modules: No module named 'p1_software_solo405'
    #!/usr/bin/env python3
    # -*- coding: utf-8 -*-
    """
-   p1_software_solo405 package initialization
+   p1_software_Zero package initialization
    """
 
    # This file is intentionally left empty to mark this directory as a Python package.
    # It allows Python to import modules from this package using the syntax:
-   # from p1_software_solo405.module import something
+   # from p1_software_Zero.module import something
    ```
 
 2. **`start_p1_solo.py` の修正**：
@@ -48,7 +48,7 @@ Cannot continue without required modules: No module named 'p1_software_solo405'
    ```python
    # Set environment variables
    env = os.environ.copy()
-   # Add the parent directory of p1_software_solo405 to PYTHONPATH
+   # Add the parent directory of p1_software_Zero to PYTHONPATH
    parent_dir = os.path.dirname(SCRIPT_DIR)
    if "PYTHONPATH" in env:
        env["PYTHONPATH"] = f"{parent_dir}{os.pathsep}{env['PYTHONPATH']}"
@@ -118,12 +118,12 @@ The following fixes were implemented:
    #!/usr/bin/env python3
    # -*- coding: utf-8 -*-
    """
-   p1_software_solo405 package initialization
+   p1_software_Zero package initialization
    """
 
    # This file is intentionally left empty to mark this directory as a Python package.
    # It allows Python to import modules from this package using the syntax:
-   # from p1_software_solo405.module import something
+   # from p1_software_Zero.module import something
    ```
 
 2. **Modified `start_p1_solo.py`**:
@@ -132,7 +132,7 @@ The following fixes were implemented:
    ```python
    # Set environment variables
    env = os.environ.copy()
-   # Add the parent directory of p1_software_solo405 to PYTHONPATH
+   # Add the parent directory of p1_software_Zero to PYTHONPATH
    parent_dir = os.path.dirname(SCRIPT_DIR)
    if "PYTHONPATH" in env:
        env["PYTHONPATH"] = f"{parent_dir}{os.pathsep}{env['PYTHONPATH']}"

@@ -138,7 +138,7 @@
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
    source ~/envmonitor-venv/bin/activate
-   sudo python3 p1_software_solo405/ap_setup/P1_ap_setup_solo.py --configure
+   sudo python3 p1_software_Zero/ap_setup/P1_ap_setup_solo.py --configure
    ```
 
 2. Raspberry Pi Zero 2Wを再起動します：
@@ -219,7 +219,7 @@ Ver1.5では、Raspberry Pi Zero 2Wの電源投入時に自動的にシステム
 3. systemdサービスを作成します：
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
-   sudo python3 p1_software_solo405/start_p1_solo_v1.5.py --create-service
+   sudo python3 p1_software_Zero/start_p1_solo_v1.5.py --create-service
    ```
 4. サービスが正常に作成されたことを確認します：
    ```bash
@@ -256,7 +256,7 @@ Ver1.5では、Raspberry Pi Zero 2Wの電源投入時に自動的にシステム
    ```
 4. P1サービスを開始します：
    ```bash
-   sudo python3 p1_software_solo405/start_p1_solo_v1.5.py
+   sudo python3 p1_software_Zero/start_p1_solo_v1.5.py
    ```
 
 ### 6.2 P4, P5, P6の接続テスト
@@ -265,7 +265,7 @@ Ver1.5では、Raspberry Pi Zero 2Wの電源投入時に自動的にシステム
 2. P1のアクセスポイントに接続するのを待ちます。
 3. P1で接続状態を確認します：
    ```bash
-   sudo python3 p1_software_solo405/connection_monitor/monitor_v1.2.py --status
+   sudo python3 p1_software_Zero/connection_monitor/monitor_v1.2.py --status
    ```
 
 ### 6.3 データ収集の確認
@@ -302,13 +302,13 @@ Ver1.5では、Raspberry Pi Zero 2Wの電源投入時に自動的にシステム
     ```
   - アクセスポイントを再設定します：
     ```bash
-    sudo python3 p1_software_solo405/ap_setup/P1_ap_setup_solo.py --configure
+    sudo python3 p1_software_Zero/ap_setup/P1_ap_setup_solo.py --configure
     ```
 
 - **データ収集が機能しない**
   - データ収集サービスを確認します：
     ```bash
-    sudo python3 p1_software_solo405/data_collection/P1_data_collector_solo_v1.2.py --status
+    sudo python3 p1_software_Zero/data_collection/P1_data_collector_solo_v1.2.py --status
     ```
   - ログを確認します：
     ```bash
@@ -318,7 +318,7 @@ Ver1.5では、Raspberry Pi Zero 2Wの電源投入時に自動的にシステム
 - **Webインターフェースが機能しない**
   - Webインターフェースサービスを確認します：
     ```bash
-    sudo python3 p1_software_solo405/web_interface/P1_app_simple_v1.2.py --status
+    sudo python3 p1_software_Zero/web_interface/P1_app_simple_v1.2.py --status
     ```
   - ログを確認します：
     ```bash

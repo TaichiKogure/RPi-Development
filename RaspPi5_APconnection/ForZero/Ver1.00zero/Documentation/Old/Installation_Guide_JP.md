@@ -136,7 +136,7 @@
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
    source ~/envmonitor-venv/bin/activate
-   sudo python3 p1_software_solo405/ap_setup/P1_ap_setup_solo.py --configure
+   sudo python3 p1_software_Zero/ap_setup/P1_ap_setup_solo.py --configure
    ```
 
 2. Raspberry Pi 5を再起動します：
@@ -218,7 +218,7 @@
    ```
 4. P1サービスを開始します：
    ```bash
-   sudo python3 p1_software_solo405/start_p1_solo.py
+   sudo python3 p1_software_Zero/start_p1_solo.py
    ```
 
 ### 5.2 P4, P5, P6の接続テスト
@@ -227,7 +227,7 @@
 2. P1のアクセスポイントに接続するのを待ちます。
 3. P1で接続状態を確認します：
    ```bash
-   sudo python3 p1_software_solo405/connection_monitor/P1_wifi_monitor_solo.py --status
+   sudo python3 p1_software_Zero/connection_monitor/P1_wifi_monitor_solo.py --status
    ```
 
 ### 5.3 データ収集の確認
@@ -264,13 +264,13 @@
     ```
   - アクセスポイントを再設定します：
     ```bash
-    sudo python3 p1_software_solo405/ap_setup/P1_ap_setup_solo.py --configure
+    sudo python3 p1_software_Zero/ap_setup/P1_ap_setup_solo.py --configure
     ```
 
 - **データ収集が機能しない**
   - データ収集サービスを確認します：
     ```bash
-    sudo python3 p1_software_solo405/data_collection/P1_data_collector_solo.py --status
+    sudo python3 p1_software_Zero/data_collection/P1_data_collector_solo.py --status
     ```
   - ログを確認します：
     ```bash
@@ -280,7 +280,7 @@
 - **Webインターフェースが機能しない**
   - Webインターフェースサービスを確認します：
     ```bash
-    sudo python3 p1_software_solo405/web_interface/P1_app_solo.py --status
+    sudo python3 p1_software_Zero/web_interface/P1_app_solo.py --status
     ```
   - ログを確認します：
     ```bash

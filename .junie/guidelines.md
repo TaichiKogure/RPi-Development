@@ -2120,7 +2120,7 @@ if __name__ == "__main__":
 2. エラーが発生しているため対策を行う。
 
 ```bash
-2025-07-07 11:42:17,337 - WARNING - Failed to import refactored modules: No module named 'p1_software_solo405'
+2025-07-07 11:42:17,337 - WARNING - Failed to import refactored modules: No module named 'p1_software_Zero'
 2025-07-07 11:42:17,337 - INFO - Falling back to original implementation
 Traceback (most recent call last):
   File "/home/pi/RaspPi5_APconnection/Ver4.61Debug/p1_software_solo405/data_collection/P1_data_collector_solo.py", line 592, in <module>

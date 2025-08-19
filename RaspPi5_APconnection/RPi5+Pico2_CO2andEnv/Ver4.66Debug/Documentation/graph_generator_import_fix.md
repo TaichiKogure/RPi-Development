@@ -55,7 +55,7 @@ except ImportError:
     try:
         from p1_software_solo405.web_interface.data.data_manager import DataManager
         data_manager = DataManager(self.config)
-        logger.info("Successfully imported DataManager using absolute import with p1_software_solo405 prefix")
+        logger.info("Successfully imported DataManager using absolute import with p1_software_Zero prefix")
     except ImportError:
         # Try another absolute import path as a last resort
         from web_interface.data.data_manager import DataManager

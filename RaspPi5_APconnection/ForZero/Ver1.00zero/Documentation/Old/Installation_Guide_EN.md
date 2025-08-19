@@ -136,7 +136,7 @@ For each Pico 2W, connect the BME680 sensor and MH-Z19B CO2 sensor as follows:
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
    source ~/envmonitor-venv/bin/activate
-   sudo python3 p1_software_solo405/ap_setup/P1_ap_setup_solo.py --configure
+   sudo python3 p1_software_Zero/ap_setup/P1_ap_setup_solo.py --configure
    ```
 
 2. Reboot the Raspberry Pi 5:
@@ -218,7 +218,7 @@ Repeat the steps from 4.3, but use the P6-specific files:
    ```
 4. Start the P1 services:
    ```bash
-   sudo python3 p1_software_solo405/start_p1_solo.py
+   sudo python3 p1_software_Zero/start_p1_solo.py
    ```
 
 ### 5.2 Test P4, P5, P6 Connectivity
@@ -227,7 +227,7 @@ Repeat the steps from 4.3, but use the P6-specific files:
 2. Wait for them to connect to the P1 access point.
 3. On P1, check the connection status:
    ```bash
-   sudo python3 p1_software_solo405/connection_monitor/P1_wifi_monitor_solo.py --status
+   sudo python3 p1_software_Zero/connection_monitor/P1_wifi_monitor_solo.py --status
    ```
 
 ### 5.3 Verify Data Collection
@@ -264,13 +264,13 @@ Repeat the steps from 4.3, but use the P6-specific files:
     ```
   - Reconfigure the access point:
     ```bash
-    sudo python3 p1_software_solo405/ap_setup/P1_ap_setup_solo.py --configure
+    sudo python3 p1_software_Zero/ap_setup/P1_ap_setup_solo.py --configure
     ```
 
 - **Data Collection Not Working**
   - Check the data collection service:
     ```bash
-    sudo python3 p1_software_solo405/data_collection/P1_data_collector_solo.py --status
+    sudo python3 p1_software_Zero/data_collection/P1_data_collector_solo.py --status
     ```
   - Check the logs:
     ```bash
@@ -280,7 +280,7 @@ Repeat the steps from 4.3, but use the P6-specific files:
 - **Web Interface Not Working**
   - Check the web interface service:
     ```bash
-    sudo python3 p1_software_solo405/web_interface/P1_app_solo.py --status
+    sudo python3 p1_software_Zero/web_interface/P1_app_solo.py --status
     ```
   - Check the logs:
     ```bash

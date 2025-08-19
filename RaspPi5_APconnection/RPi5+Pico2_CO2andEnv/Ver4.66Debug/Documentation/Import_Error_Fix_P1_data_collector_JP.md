@@ -86,13 +86,13 @@ NameError: name 'DEFAULT_CONFIG' is not defined
        # リファクタリングされたパッケージ構造からインポートを試みる
        from p1_software_solo405.data_collection.config import DEFAULT_CONFIG, MONITOR_CONFIG
        from p1_software_solo405.data_collection.main import DataCollector, main as refactored_main
-       logger.info("Successfully imported refactored modules from p1_software_solo405 package")
+       logger.info("Successfully imported refactored modules from p1_software_Zero package")
        # リファクタリングされた実装を使用
        if __name__ == "__main__":
            refactored_main()
            sys.exit(0)
    except ImportError as e:
-       logger.warning(f"Failed to import from p1_software_solo405 package: {e}")
+       logger.warning(f"Failed to import from p1_software_Zero package: {e}")
        
        # 相対パスからのインポートを試みる
        try:

@@ -182,7 +182,7 @@ def start_web_interface(config):
 
         # Set environment variables
         env = os.environ.copy()
-        # Add the parent directory of p1_software_solo405 to PYTHONPATH
+        # Add the parent directory of p1_software_Zero to PYTHONPATH
         parent_dir = os.path.dirname(SCRIPT_DIR)
         if "PYTHONPATH" in env:
             env["PYTHONPATH"] = f"{parent_dir}{os.pathsep}{env['PYTHONPATH']}"

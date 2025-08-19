@@ -45,7 +45,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Add the parent directory to the Python path so we can import from p1_software_solo405
+# Add the parent directory to the Python path so we can import from p1_software_Zero
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
@@ -58,9 +58,9 @@ try:
     from p1_software_solo405.web_interface.data.data_manager import DataManager
     from p1_software_solo405.web_interface.visualization.graph_generator import GraphGenerator
     from p1_software_solo405.web_interface.api.routes import APIRoutes
-    logger.info("Successfully imported refactored modules from p1_software_solo405 package")
+    logger.info("Successfully imported refactored modules from p1_software_Zero package")
 except ImportError as e:
-    logger.error(f"Failed to import refactored modules from p1_software_solo405 package: {e}")
+    logger.error(f"Failed to import refactored modules from p1_software_Zero package: {e}")
 
     # Try to import from relative path
     try:

@@ -32,7 +32,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Add the parent directory to the Python path so we can import from p1_software_solo405
+# Add the parent directory to the Python path so we can import from p1_software_Zero
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
@@ -43,9 +43,9 @@ try:
     from p1_software_solo405.connection_monitor.config import DEFAULT_CONFIG, ensure_log_directory
     from p1_software_solo405.connection_monitor.monitor import WiFiMonitor
     from p1_software_solo405.connection_monitor.utils.console import print_connection_status
-    logger.info("Successfully imported refactored modules from p1_software_solo405 package")
+    logger.info("Successfully imported refactored modules from p1_software_Zero package")
 except ImportError as e:
-    logger.error(f"Failed to import refactored modules from p1_software_solo405 package: {e}")
+    logger.error(f"Failed to import refactored modules from p1_software_Zero package: {e}")
 
     # Try to import from relative path
     try:
@@ -64,9 +64,9 @@ def main():
     try:
         # Try to import from the refactored package structure
         from p1_software_solo405.connection_monitor.main import main as refactored_main
-        logger.info("Successfully imported main function from p1_software_solo405 package")
+        logger.info("Successfully imported main function from p1_software_Zero package")
     except ImportError as e:
-        logger.error(f"Failed to import main function from p1_software_solo405 package: {e}")
+        logger.error(f"Failed to import main function from p1_software_Zero package: {e}")
 
         # Try to import from relative path
         try:
