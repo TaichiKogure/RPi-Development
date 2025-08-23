@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Raspberry Pi Pico 2W Main Program for Environmental Monitoring - Debug Version 4.25
-Version: 4.25.0-debug
+Version: 4.25.0-debug (BME680-only for Ver2.11zeroOne)
 
 This is a debug version of the main program for the Raspberry Pi Pico 2W (P4) that helps
 identify and resolve issues with WiFi connection, especially the problem where Thonny
@@ -14,11 +14,13 @@ Features:
 - Multiple WiFi connection modes for testing
 - Detailed status reporting throughout the process
 - BME680 sensor for temperature, humidity, pressure, and gas resistance
-- MH-Z19C sensor for CO2 concentration
 - WiFi connectivity to P1 server with improved error handling
 - Error handling with improved logging
 - LED status indicators
 - Emergency measures to prevent USB/REPL disconnection
+
+Note:
+- Ver2.11zeroOne runs in BME680-only mode. CO2 (MH-Z19 series) is intentionally disabled.
 
 Pin connections:
 BME680:
@@ -26,12 +28,6 @@ BME680:
 - GND -> GND (Pin 38)
 - SCL -> GP1 (Pin 2)
 - SDA -> GP0 (Pin 1)
-
-MH-Z19C:
-- VCC (red) -> VBUS (5V, Pin 40)
-- GND (black) -> GND (Pin 38)
-- TX (green) -> GP9 (Pin 12)
-- RX (blue) -> GP8 (Pin 11)
 
 Usage:
     This file should be saved as main.py on the Pico 2W for automatic execution on boot.
@@ -78,8 +74,9 @@ TRANSMISSION_INTERVAL = 30           # Data transmission interval in seconds
 LED_PIN = "LED"                      # Onboard LED
 I2C_SDA_PIN = 0                      # I2C SDA pin for BME680
 I2C_SCL_PIN = 1                      # I2C SCL pin for BME680
-UART_TX_PIN = 8                      # UART TX pin for MH-Z19C
-UART_RX_PIN = 9                      # UART RX pin for MH-Z19C
+# UART pins for MH-Z19C (unused in BME680-only mode)
+UART_TX_PIN = 8                      # (unused) UART TX pin for MH-Z19C
+UART_RX_PIN = 9                      # (unused) UART RX pin for MH-Z19C
 
 # ===== ERROR HANDLING =====
 ERROR_LOG_FILE = "/error_log_p4_solo.txt"  # Error log file path

@@ -192,7 +192,7 @@ Ver1.5では、Raspberry Pi Zero 2Wの電源投入時に自動的にシステム
 **使用方法**:
 1. systemdサービスを作成します：
    ```bash
-   sudo python3 p1_software_Zero/start_p1_solo_v1.5.py --create-service
+   sudo python3 p1_software_Zero/NotUse_start_p1_solo_v1.5.py --create-service
    ```
 2. サービスが正常に作成されたことを確認します：
    ```bash
@@ -265,7 +265,7 @@ P1を手動で起動するには、以下のコマンドを実行します：
 ```bash
 cd /path/to/RaspPi5_APconnection/ForZero/Ver1.00zero
 source ~/envmonitor-venv/bin/activate
-sudo python3 p1_software_Zero/start_p1_solo_v1.5.py
+sudo python3 p1_software_Zero/NotUse_start_p1_solo_v1.5.py
 ```
 
 ### 自動起動
@@ -276,7 +276,7 @@ P1を自動起動するには、以下の手順で設定します：
    ```bash
    cd /path/to/RaspPi5_APconnection/ForZero/Ver1.00zero
    source ~/envmonitor-venv/bin/activate
-   sudo python3 p1_software_Zero/start_p1_solo_v1.5.py --create-service
+   sudo python3 p1_software_Zero/NotUse_start_p1_solo_v1.5.py --create-service
    ```
 
 2. システムを再起動します：

@@ -14,7 +14,7 @@ It's designed to be run at system startup to ensure all services are running.
 It includes enhanced self-diagnostics and recovery mechanisms for error handling.
 
 Usage:
-    sudo ~/envmonitor-venv/bin/python3 start_p1_solo_v1.5.py
+    sudo ~/envmonitor-venv/bin/python3 NotUse_start_p1_solo_v1.5.py
 
 Note: This script should be run using the Python interpreter from the virtual environment.
 """

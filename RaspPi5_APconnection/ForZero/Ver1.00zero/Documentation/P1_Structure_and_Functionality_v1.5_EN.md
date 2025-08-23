@@ -192,7 +192,7 @@ In Ver1.5, functionality has been added to automatically start the system when t
 **Usage**:
 1. Create the systemd service:
    ```bash
-   sudo python3 p1_software_Zero/start_p1_solo_v1.5.py --create-service
+   sudo python3 p1_software_Zero/NotUse_start_p1_solo_v1.5.py --create-service
    ```
 2. Verify that the service was created successfully:
    ```bash
@@ -265,7 +265,7 @@ To manually start P1, run the following commands:
 ```bash
 cd /path/to/RaspPi5_APconnection/ForZero/Ver1.00zero
 source ~/envmonitor-venv/bin/activate
-sudo python3 p1_software_Zero/start_p1_solo_v1.5.py
+sudo python3 p1_software_Zero/NotUse_start_p1_solo_v1.5.py
 ```
 
 ### Auto-start
@@ -276,7 +276,7 @@ To configure P1 for auto-start, follow these steps:
    ```bash
    cd /path/to/RaspPi5_APconnection/ForZero/Ver1.00zero
    source ~/envmonitor-venv/bin/activate
-   sudo python3 p1_software_Zero/start_p1_solo_v1.5.py --create-service
+   sudo python3 p1_software_Zero/NotUse_start_p1_solo_v1.5.py --create-service
    ```
 
 2. Restart the system:

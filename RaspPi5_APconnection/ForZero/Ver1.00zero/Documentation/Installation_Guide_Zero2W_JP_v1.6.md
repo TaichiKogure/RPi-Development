@@ -221,7 +221,7 @@ Ver1.5では、Raspberry Pi Zero 2Wの電源投入時に自動的にシステム
 3. systemdサービスを作成します：
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
-   sudo python3 p1_software_Zero/start_p1_solo_v1.5.py --create-service
+   sudo python3 p1_software_Zero/NotUse_start_p1_solo_v1.5.py --create-service
    ```
 4. サービスが正常に作成されたことを確認します：
    ```bash
@@ -258,7 +258,7 @@ Ver1.5では、Raspberry Pi Zero 2Wの電源投入時に自動的にシステム
    ```
 4. P1サービスを開始します：
    ```bash
-   sudo python3 p1_software_Zero/start_p1_solo_v1.5.py
+   sudo python3 p1_software_Zero/NotUse_start_p1_solo_v1.5.py
    ```
 
 ### 6.2 P4, P5, P6の接続テスト

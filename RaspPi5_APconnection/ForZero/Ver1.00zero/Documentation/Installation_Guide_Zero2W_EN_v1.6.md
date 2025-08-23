@@ -221,7 +221,7 @@ In Ver1.5, functionality has been added to automatically start the system when t
 3. Create the systemd service:
    ```bash
    cd ~/RaspPi5_APconnection/ForZero/Ver1.00zero
-   sudo python3 p1_software_Zero/start_p1_solo_v1.5.py --create-service
+   sudo python3 p1_software_Zero/NotUse_start_p1_solo_v1.5.py --create-service
    ```
 4. Verify that the service was created successfully:
    ```bash
@@ -258,7 +258,7 @@ In Ver1.5, functionality has been added to automatically start the system when t
    ```
 4. Start the P1 services:
    ```bash
-   sudo python3 p1_software_Zero/start_p1_solo_v1.5.py
+   sudo python3 p1_software_Zero/NotUse_start_p1_solo_v1.5.py
    ```
 
 ### 6.2 Test P4, P5, P6 Connections

@@ -226,6 +226,12 @@ def initialize():
                         print("Auto-reset disabled. Continuing without BME680...")
                         bme = None
 
+        # Ver2.00zeroOne: Commented out MH-Z19C CO2 sensor initialization as we're disabling CO2 sensor functionality
+        print("CO2 sensor initialization disabled in Ver2.00zeroOne (BME680 only mode)")
+        co2_sensor = None
+        
+        # Original MH-Z19C initialization code (commented out):
+        """
         # Initialize MH-Z19C CO2 sensor
         print("Initializing MH-Z19C CO2 sensor...")
         try:
@@ -249,6 +255,7 @@ def initialize():
             else:
                 print("Auto-reset disabled. Continuing without MH-Z19C...")
                 co2_sensor = None
+        """
 
         # Initialize WiFi client
         print("Initializing WiFi client...")
@@ -667,6 +674,9 @@ def main_loop(bme, co2_sensor, client, transmitter, watchdog):
                         print(f"Temperature: {bme.temperature:.1f}°C, Humidity: {bme.humidity:.1f}%, "
                               f"Pressure: {bme.pressure:.1f}hPa, Gas: {bme.gas:.0f}Ω")
 
+                    # Ver2.00zeroOne: Commented out CO2 sensor reading code as we're disabling CO2 sensor functionality
+                    # Original CO2 sensor reading code (commented out):
+                    """
                     if co2_sensor:
                         try:
                             # Use get_readings() method to match test_simulation.py approach
@@ -680,6 +690,7 @@ def main_loop(bme, co2_sensor, client, transmitter, watchdog):
                                 print(f"CO2: {co2}ppm")
                             except Exception as e:
                                 print(f"Error reading CO2 sensor: {e}")
+                    """
 
                     last_print_time = current_time
 
