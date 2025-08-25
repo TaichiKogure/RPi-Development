@@ -1,4 +1,4 @@
-# Cam2M_v2.0.py
+# Cam2M_v2.1.py
 # Camera control with GUI: live preview, interval still capture, and timelapse creation/playback
 # Requirements: opencv-python, pillow
 # Tested on: Windows (webcam). Paths use Windows-style backslashes.
@@ -8,6 +8,7 @@ import cv2
 import time
 import glob
 import threading
+from typing import Optional, Tuple
 from datetime import datetime
 
 import tkinter as tk
@@ -135,7 +136,7 @@ class TimelapseCreator:
         files.sort()
         return files
 
-    def create_timelapse(self, output_fps: int = 24, output_name: str | None = None, size_hint: tuple[int, int] | None = None, progress_callback=None):
+    def create_timelapse(self, output_fps: int = 24, output_name: Optional[str] = None, size_hint: Optional[Tuple[int, int]] = None, progress_callback=None):
         images = self._find_images()
         if not images:
             raise RuntimeError("No images found in the output folder.")
@@ -169,7 +170,7 @@ class TimelapseCreator:
         self.last_output_path = out_path
         return out_path
 
-    def play_timelapse(self, video_path: str | None = None, wait_ms: int = 33):
+    def play_timelapse(self, video_path: Optional[str] = None, wait_ms: int = 33):
         path = video_path or self.last_output_path
         if not path or not os.path.exists(path):
             raise RuntimeError("No timelapse video available to play.")
@@ -192,7 +193,7 @@ class TimelapseCreator:
 class CameraApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Cam2M v2.0 - Interval Capture & Timelapse")
+        self.title("Cam2M v2.1 - Interval Capture & Timelapse")
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.geometry("980x720")
 
@@ -224,14 +225,39 @@ class CameraApp(tk.Tk):
         ttk.Label(ctrl, text="Resolution (WxH)").grid(row=0, column=2, sticky=tk.W)
         self.width_var = tk.IntVar(value=1280)
         self.height_var = tk.IntVar(value=720)
-        ttk.Entry(ctrl, width=6, textvariable=self.width_var).grid(row=0, column=3, padx=2)
+        self.width_entry = ttk.Entry(ctrl, width=6, textvariable=self.width_var)
+        self.width_entry.grid(row=0, column=3, padx=2)
         ttk.Label(ctrl, text="x").grid(row=0, column=4)
-        ttk.Entry(ctrl, width=6, textvariable=self.height_var).grid(row=0, column=5, padx=2)
+        self.height_entry = ttk.Entry(ctrl, width=6, textvariable=self.height_var)
+        self.height_entry.grid(row=0, column=5, padx=2)
 
-        # FPS
-        ttk.Label(ctrl, text="FPS").grid(row=0, column=6, sticky=tk.W)
+        # Resolution presets
+        ttk.Label(ctrl, text="Preset").grid(row=0, column=8, sticky=tk.W)
+        self.res_preset_var = tk.StringVar(value="1280x720 (HD)")
+        self.res_combo = ttk.Combobox(
+            ctrl,
+            width=18,
+            textvariable=self.res_preset_var,
+            state="readonly",
+            values=[
+                "640x480 (VGA)",
+                "1280x720 (HD)",
+                "1920x1080 (FHD)",
+                "2560x1440 (QHD)",
+                "3840x2160 (4K)",
+                "Custom...",
+            ],
+        )
+        self.res_combo.grid(row=0, column=9, columnspan=2, sticky=tk.W, padx=4)
+        self.res_combo.bind("<<ComboboxSelected>>", self._on_res_preset_change)
+
+        # Preview FPS
+        ttk.Label(ctrl, text="Preview FPS (Live)").grid(row=0, column=6, sticky=tk.W)
         self.fps_var = tk.IntVar(value=30)
         ttk.Entry(ctrl, width=5, textvariable=self.fps_var).grid(row=0, column=7, padx=4)
+
+        # Initialize entries state based on preset
+        self._on_res_preset_change()
 
         # Interval capture
         ttk.Label(ctrl, text="Capture Interval (sec)").grid(row=1, column=0, sticky=tk.W, pady=(6, 0))
@@ -245,7 +271,7 @@ class CameraApp(tk.Tk):
         ttk.Button(ctrl, text="Browse", command=self.browse_output).grid(row=1, column=6, columnspan=2, sticky=tk.W, pady=(6, 0))
 
         # Timelapse FPS
-        ttk.Label(ctrl, text="Timelapse FPS").grid(row=2, column=0, sticky=tk.W, pady=(6, 0))
+        ttk.Label(ctrl, text="Timelapse FPS (Playback/Export)").grid(row=2, column=0, sticky=tk.W, pady=(6, 0))
         self.tl_fps_var = tk.IntVar(value=24)
         ttk.Entry(ctrl, width=6, textvariable=self.tl_fps_var).grid(row=2, column=1, sticky=tk.W, pady=(6, 0))
 
@@ -272,6 +298,35 @@ class CameraApp(tk.Tk):
         # Progress bar for timelapse
         self.progress = ttk.Progressbar(root, orient=tk.HORIZONTAL, mode='determinate')
         self.progress.pack(side=tk.BOTTOM, fill=tk.X, padx=8, pady=8)
+
+    def _on_res_preset_change(self, event=None):
+        preset = getattr(self, 'res_preset_var', None)
+        if preset is None:
+            return
+        preset = self.res_preset_var.get()
+        mapping = {
+            "640x480 (VGA)": (640, 480),
+            "1280x720 (HD)": (1280, 720),
+            "1920x1080 (FHD)": (1920, 1080),
+            "2560x1440 (QHD)": (2560, 1440),
+            "3840x2160 (4K)": (3840, 2160),
+        }
+        if preset in mapping:
+            w, h = mapping[preset]
+            self.width_var.set(w)
+            self.height_var.set(h)
+            try:
+                self.width_entry.configure(state="disabled")
+                self.height_entry.configure(state="disabled")
+            except Exception:
+                pass
+        else:
+            # Custom...
+            try:
+                self.width_entry.configure(state="normal")
+                self.height_entry.configure(state="normal")
+            except Exception:
+                pass
 
     def browse_output(self):
         chosen = filedialog.askdirectory(initialdir=self.output_var.get())
