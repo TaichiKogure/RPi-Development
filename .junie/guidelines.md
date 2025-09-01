@@ -2164,7 +2164,7 @@ NameError: name 'DEFAULT_CONFIG' is not defined
 - Failed to import refactored modules from p1_software_solo405 package: No module named 'p1_software_solo405' 
 - Failed to import refactored modules from relative path: No module named 'p1_software_solo405' 
 - Cannot continue without required modules
-リファクタリング版の[P1_app_solo_new.py](../RaspPi5_APconnection/RPi5+Pico2_CO2andEnv/Ver4.61Debug/p1_software_solo405/web_interface/P1_app_solo_new.py)
+リファクタリング版の[P1_app_solo_new.py](../RPi_Development01/RPi5+Pico2_CO2andEnv/Ver4.61Debug/p1_software_solo405/web_interface/P1_app_solo_new.py)
 を正しく使うためにモジュールのインポートパスの問題を解決する必要があります
 
 - エラーログから判断すると、現在のシステムはを使用しようとしていますが、モジュールの読み込みに失敗しています。このリファクタリングされたモジュール構造を正しく使用できるよう、Pythonのモジュールパスやパッケージ構造の問題を解決する必要があります。 `P1_app_solo_new.py``p1_software_solo405`

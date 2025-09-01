@@ -55,7 +55,7 @@ RaspPi5_APconnection\Ver4.44\
 
 2. 統合起動スクリプトを実行します：
    ```bash
-   cd ~/RaspPi5_APconnection/Ver4.44/p1_software_solo44
+   cd ~/RPi_Development01/Ver4.44/p1_software_solo44
    sudo ~/envmonitor-venv/bin/python3 start_p1_solo44.py
    ```
 

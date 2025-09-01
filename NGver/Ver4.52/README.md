@@ -73,7 +73,7 @@ sudo chown -R pi:pi /var/lib(FromThonny)/raspap_solo
 4. システムを起動します：
 
 ```bash
-cd ~/RaspPi5_APconnection/Ver4.5/p1_software_solo45
+cd ~/RPi_Development01/Ver4.5/p1_software_solo45
 sudo ~/envmonitor-venv/bin/python3 start_p1_solo45.py
 ```
 

@@ -1,0 +1,27 @@
+# Sample systemd unit for Flask10X in production with Gunicorn
+# Place as: /etc/systemd/system/flask10x.service
+# Adjust User, WorkingDirectory, Environment, and paths as needed.
+
+[Unit]
+Description=Flask10X WSGI Service (Gunicorn)
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/RaspPi5_APconnection/HomeRaspMod/ModVer
+# Use a Python venv if available
+Environment="PATH=/home/pi/envmonitor-venv/bin:/usr/local/bin:/usr/bin"
+# Gunicorn with 2 workers and 2 threads each (adjust per CPU/IO)
+ExecStart=/home/pi/envmonitor-venv/bin/gunicorn -w 2 --threads 2 -b 0.0.0.0:8888 Flask10X:app
+# Auto-restart on failures
+Restart=on-failure
+RestartSec=3
+
+# File descriptors / resources (optional)
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

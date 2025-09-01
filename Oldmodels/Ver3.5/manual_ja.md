@@ -55,14 +55,14 @@
    ```bash
    cd ~
    git clone https://github.com/yourusername/RaspPi5_APconnection.git
-   cd RaspPi5_APconnection
+   cd RPi_Development01
    ```
 
    または、提供されたファイルを`/home/pi/RaspPi5_APconnection/Ver3.5`にコピーします。
 
 6. **P1ソフトウェアのセットアップ**
    ```bash
-   cd ~/RaspPi5_APconnection/Ver3.5
+   cd ~/RPi_Development01/Ver3.5
    sudo mkdir -p /var/lib(FromThonny)/raspap_solo/data
    sudo chmod 777 /var/lib(FromThonny)/raspap_solo/data
    sudo mkdir -p /var/log
@@ -78,7 +78,7 @@
    ファイルの末尾（`exit 0`の前）に以下を追加します：
    ```bash
    # Start P1 services
-   sudo /home/pi/envmonitor-venv/bin/python3 /home/pi/RaspPi5_APconnection/Ver3.5/p1_software_solo35/start_p1_solo.py &
+   sudo /home/pi/envmonitor-venv/bin/python3 /home/pi/RPi_Development01/Ver3.5/p1_software_solo35/start_p1_solo.py &
    ```
 
 ### P2（Raspberry Pi Pico 2W）のセットアップ
