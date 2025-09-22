@@ -45,6 +45,12 @@ from typing import Optional, Dict, Any
 
 import pandas as pd
 from flask import Flask, jsonify, render_template_string, request, send_from_directory, Response
+try:
+    from plotly.offline import get_plotlyjs
+except Exception:
+    # Fallback: empty string if plotly is not available; UI will warn in console
+    def get_plotlyjs():
+        return ""
 
 # --------------------------------------------------------------------------------------
 # Configuration & Logging
@@ -77,8 +83,8 @@ INDEX_HTML = """
   <meta charset=\"UTF-8\" />
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
   <title>DataViewer Ver4</title>
-  <script src=\"https://cdn.plot.ly/plotly-2.27.0.min.js\"></script>
-  <script src=\"https://code.jquery.com/jquery-3.6.0.min.js\"></script>
+  <!-- Plotly will be injected inline by server for offline usage -->
+  <script id=\"plotly-inline\">{{ plotlyjs | safe }}</script>
   <style>
     :root {
       --bg: #0f1115;
@@ -116,7 +122,7 @@ INDEX_HTML = """
 </head>
 <body>
   <h1>DataViewer Ver4</h1>
-  <div class=\"controls\">
+  <div class=\"controls\">\n    <label>表示期間: 直近24時間（固定）</label>\n    <label>自動更新(秒): <input type=\"number\" id=\"refreshSec\" min=\"5\" step=\"5\" value=\"{{ refresh_sec }}\" /></label>\n    <button id=\"applyRefresh\">Apply</button>
     <span>表示期間: 直近24時間（固定）。10分ごとに自動更新。</span>
     <label><input type=\"checkbox\" id=\"p1\" checked /> P1</label>
     <label><input type=\"checkbox\" id=\"p2\" checked /> P2</label>
@@ -227,51 +233,29 @@ INDEX_HTML = """
       document.getElementById('stats-table-container').innerHTML = html;
     }
 
-    function loadGraphs() {
-      const show_p1 = document.getElementById('p1').checked;
-      const show_p2 = document.getElementById('p2').checked;
-      const show_p3 = document.getElementById('p3').checked;
-      const show_p4 = document.getElementById('p4').checked;
-
-      $.get(`/api/graphs?show_p1=${show_p1}&show_p2=${show_p2}&show_p3=${show_p3}&show_p4=${show_p4}`, function(data) {
-        paramMeta.forEach(p => {
-          const traces = [];
-          ['P1','P2','P3','P4'].forEach(dev => {
-            if (data[dev] && data[dev][p.id] && data[dev]['timestamp']) {
-              traces.push({
-                x: data[dev]['timestamp'],
-                y: data[dev][p.id],
-                name: dev,
-                mode: 'lines',
-                type: 'scatter'
-              });
-            }
-          });
-          const layout = {
-            title: { text: p.label, font: { color: '#e6e6e6' } },
-            xaxis: { title: 'Time', type: 'date', gridcolor: '#2a3242', tickfont: {color: '#cfd6e4'}, titlefont: {color: '#cfd6e4'} },
-            yaxis: { title: p.label, gridcolor: '#2a3242', tickfont: {color: '#cfd6e4'}, titlefont: {color: '#cfd6e4'} },
-            margin: { l: 40, r: 20, t: 40, b: 40 },
-            legend: { orientation: 'h', font: { color: '#cfd6e4' } },
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0)'
-          };
-          Plotly.newPlot(p.id, traces, layout, {displayModeBar: false});
-        });
-        buildDownloadLinks();
-        const stats = computeStats(data);
-        renderStatsTable(stats);
-      });
-    }
+    function loadGraphs() {\n      // Use native fetch to avoid jQuery dependency in offline/AP mode\n      const show_p1 = document.getElementById('p1').checked;\n      const show_p2 = document.getElementById('p2').checked;\n      const show_p3 = document.getElementById('p3').checked;\n      const show_p4 = document.getElementById('p4').checked;\n\n      const url = `/api/graphs?show_p1=${show_p1}&show_p2=${show_p2}&show_p3=${show_p3}&show_p4=${show_p4}`;\n      fetch(url).then(r => r.json()).then((data) => {\n        paramMeta.forEach(p => {\n          const traces = [];\n          ['P1','P2','P3','P4'].forEach(dev => {\n            if (data[dev] && data[dev][p.id] && data[dev]['timestamp']) {\n              traces.push({\n                x: data[dev]['timestamp'],\n                y: data[dev][p.id],\n                name: dev,\n                mode: 'lines',\n                type: 'scatter'\n              });\n            }\n          });\n          const layout = {\n            title: { text: p.label, font: { color: '#e6e6e6' } },\n            xaxis: { title: 'Time', type: 'date', gridcolor: '#2a3242', tickfont: {color: '#cfd6e4'}, titlefont: {color: '#cfd6e4'} },\n            yaxis: { title: p.label, gridcolor: '#2a3242', tickfont: {color: '#cfd6e4'}, titlefont: {color: '#cfd6e4'} },\n            margin: { l: 40, r: 20, t: 40, b: 40 },\n            legend: { orientation: 'h', font: { color: '#cfd6e4' } },\n            paper_bgcolor: 'rgba(0,0,0,0)',\n            plot_bgcolor: 'rgba(0,0,0,0)'\n          };\n          Plotly.newPlot(p.id, traces, layout, {displayModeBar: false});\n        });\n        buildDownloadLinks();\n        const stats = computeStats(data);\n        renderStatsTable(stats);\n      }).catch(err => {\n        console.error('Failed to load graphs:', err);\n      });\n    }
 
     document.getElementById('p1').addEventListener('change', loadGraphs);
     document.getElementById('p2').addEventListener('change', loadGraphs);
     document.getElementById('p3').addEventListener('change', loadGraphs);
     document.getElementById('p4').addEventListener('change', loadGraphs);
 
-    // 初期ロード + 10分ごとの自動更新（600000ms）
+    // 初期ロード + 可変自動更新
+    let refreshTimer = null;
+    function applyRefreshInterval(sec){
+      const ms = Math.max(5, parseInt(sec || 0, 10)) * 1000;
+      if (refreshTimer) { clearInterval(refreshTimer); }
+      refreshTimer = setInterval(loadGraphs, ms);
+      console.log('Auto-refresh set to', ms, 'ms');
+    }
+    document.getElementById('applyRefresh').addEventListener('click', () => {
+      const val = document.getElementById('refreshSec').value;
+      applyRefreshInterval(val);
+      loadGraphs();
+    });
+
     loadGraphs();
-    setInterval(loadGraphs, 600000);
+    applyRefreshInterval({{ refresh_sec }});
   </script>
 </body>
 </html>
@@ -282,6 +266,7 @@ INDEX_HTML = """
 # --------------------------------------------------------------------------------------
 
 def parse_args():
+    # Added --refresh for auto refresh seconds
     parser = argparse.ArgumentParser(description="DataViewer Ver4 - Browser Graphs via Python")
     parser.add_argument('--port', type=int, default=DEFAULT_PORT, help=f'Web server port (default: {DEFAULT_PORT})')
     parser.add_argument('--days', type=int, default=DEFAULT_DAYS, help=f'Initial days range (default: {DEFAULT_DAYS})')
@@ -289,6 +274,7 @@ def parse_args():
     parser.add_argument('--p2-path', type=str, default=DEFAULT_P2_PATH, help='Path to P2 CSV')
     parser.add_argument('--p3-path', type=str, default=DEFAULT_P3_PATH, help='Path to P3 CSV')
     parser.add_argument('--p4-path', type=str, default=DEFAULT_P4_PATH, help='Path to P4 CSV')
+    parser.add_argument('--refresh', type=int, default=600, help='Auto refresh interval in seconds (default: 600)')
     return parser.parse_args()
 
 
@@ -390,7 +376,7 @@ def create_app(config: Dict[str, Any]) -> Flask:
 
     @app.route('/')
     def index():
-        return render_template_string(INDEX_HTML)
+        return render_template_string(INDEX_HTML, plotlyjs=get_plotlyjs(), refresh_sec=config.get('refresh_sec', 600))
 
     @app.route('/api/graphs')
     def api_graphs():
@@ -514,6 +500,7 @@ def main():
         'p2_path': args.p2_path,
         'p3_path': args.p3_path,
         'p4_path': args.p4_path,
+        'refresh_sec': args.refresh,
     }
 
     logger.info("Starting DataViewer Ver4")
