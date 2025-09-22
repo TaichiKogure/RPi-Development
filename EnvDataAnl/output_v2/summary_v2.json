@@ -1,0 +1,42 @@
+{
+  "output_dir": "G:\\RPi-Development\\EnvDataAnl\\output_v2",
+  "figures": [
+    "noise_timeseries_co2_v2.png",
+    "noise_timeseries_gas_resistance_v2.png",
+    "noise_timeseries_humidity_v2.png",
+    "noise_timeseries_pressure_v2.png",
+    "noise_timeseries_temperature_v2.png",
+    "timeseries_co2_smoothed_v2.png",
+    "timeseries_gas_resistance_smoothed_v2.png",
+    "timeseries_humidity_smoothed_v2.png",
+    "timeseries_pressure_smoothed_v2.png",
+    "timeseries_temperature_smoothed_v2.png",
+    "unified_smoothed_panel_v2.png"
+  ],
+  "tables": [
+    "noise_hourly_stats_v2.csv",
+    "noise_daynight_stats_v2.csv",
+    "completeness_after_interp_v2.csv"
+  ],
+  "devices": [
+    "P1",
+    "P2",
+    "P3",
+    "P4"
+  ],
+  "value_columns": [
+    "temperature",
+    "humidity",
+    "pressure",
+    "gas_resistance",
+    "co2"
+  ],
+  "rows": 78290,
+  "params": {
+    "resample_freq": null,
+    "smooth_window": 15,
+    "noise_window": 60,
+    "days": 7,
+    "tz": null
+  }
+}

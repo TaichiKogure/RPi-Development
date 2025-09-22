@@ -1,0 +1,48 @@
+{
+  "output_dir": "G:\\RPi-Development\\EnvDataAnl\\output",
+  "figures": [
+    "corr_P1.png",
+    "corr_P2.png",
+    "corr_P3.png",
+    "corr_P4.png",
+    "daynight_hist_co2.png",
+    "daynight_hist_gas_resistance.png",
+    "daynight_hist_humidity.png",
+    "daynight_hist_pressure.png",
+    "daynight_hist_temperature.png",
+    "hourly_profile_co2.png",
+    "hourly_profile_gas_resistance.png",
+    "hourly_profile_humidity.png",
+    "hourly_profile_pressure.png",
+    "hourly_profile_temperature.png",
+    "timeseries_co2.png",
+    "timeseries_gas_resistance.png",
+    "timeseries_humidity.png",
+    "timeseries_pressure.png",
+    "timeseries_temperature.png"
+  ],
+  "tables": [
+    "completeness_by_device.csv",
+    "hourly_stats.csv",
+    "daynight_stats.csv",
+    "rolling_trends_sample.csv"
+  ],
+  "devices": [
+    "P1",
+    "P2",
+    "P3",
+    "P4"
+  ],
+  "value_columns": [
+    "temperature",
+    "humidity",
+    "pressure",
+    "gas_resistance",
+    "co2"
+  ],
+  "rows": 78367,
+  "time_span": {
+    "min": "2025-09-15T22:30:15",
+    "max": "2025-09-22T18:01:01"
+  }
+}

@@ -1,0 +1,5 @@
+device_id,temperature,humidity,pressure,gas_resistance,co2
+P1,1.0,1.0,1.0,1.0,0.0
+P2,1.0,1.0,1.0,1.0,0.0
+P3,1.0,1.0,1.0,1.0,0.0
+P4,1.0,1.0,1.0,1.0,0.0
