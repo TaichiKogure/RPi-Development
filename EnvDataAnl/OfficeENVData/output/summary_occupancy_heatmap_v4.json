@@ -1,0 +1,43 @@
+{
+  "base_dir": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData",
+  "output_dir": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\output",
+  "days_limit": null,
+  "thresholds": {
+    "start_th": 750.0,
+    "end_th": 680.0,
+    "min_slope": 2.0
+  },
+  "smooth": 5,
+  "volumes": {
+    "P2": 120.0,
+    "P3": 250.0
+  },
+  "ach": 1.5,
+  "q_per_person_m3_min": 0.004,
+  "aggregation": "mean",
+  "capacity": {
+    "P1": 10,
+    "P2": 8,
+    "P3": 30
+  },
+  "pivots": {
+    "P2": {
+      "mean_csv": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\output\\occupancy_pivot_mean_P2_v4.csv",
+      "max_csv": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\output\\occupancy_pivot_max_P2_v4.csv"
+    },
+    "P3": {
+      "mean_csv": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\output\\occupancy_pivot_mean_P3_v4.csv",
+      "max_csv": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\output\\occupancy_pivot_max_P3_v4.csv"
+    }
+  },
+  "devices": {
+    "P2": {
+      "events": 828,
+      "occupancy_points": 37967
+    },
+    "P3": {
+      "events": 463,
+      "occupancy_points": 82897
+    }
+  }
+}
