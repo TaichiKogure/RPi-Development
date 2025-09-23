@@ -1,0 +1,44 @@
+{
+  "base_dir": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData",
+  "output_dir": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output",
+  "devices": [
+    "P1",
+    "P2",
+    "P3"
+  ],
+  "params": [
+    "temperature",
+    "absolute_humidity",
+    "humidity",
+    "co2",
+    "pressure",
+    "gas_resistance"
+  ],
+  "days_limit": null,
+  "figures": {
+    "P1": {
+      "temperature": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_temperature_date_hour_P1_v3.png",
+      "absolute_humidity": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_absolute_humidity_date_hour_P1_v3.png",
+      "humidity": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_humidity_date_hour_P1_v3.png",
+      "co2": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_co2_date_hour_P1_v3.png",
+      "pressure": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_pressure_date_hour_P1_v3.png",
+      "gas_resistance": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_gas_resistance_date_hour_P1_v3.png"
+    },
+    "P2": {
+      "temperature": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_temperature_date_hour_P2_v3.png",
+      "absolute_humidity": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_absolute_humidity_date_hour_P2_v3.png",
+      "humidity": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_humidity_date_hour_P2_v3.png",
+      "co2": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_co2_date_hour_P2_v3.png",
+      "pressure": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_pressure_date_hour_P2_v3.png",
+      "gas_resistance": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_gas_resistance_date_hour_P2_v3.png"
+    },
+    "P3": {
+      "temperature": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_temperature_date_hour_P3_v3.png",
+      "absolute_humidity": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_absolute_humidity_date_hour_P3_v3.png",
+      "humidity": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_humidity_date_hour_P3_v3.png",
+      "co2": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_co2_date_hour_P3_v3.png",
+      "pressure": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_pressure_date_hour_P3_v3.png",
+      "gas_resistance": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer3\\output\\heatmap_gas_resistance_date_hour_P3_v3.png"
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "base_dir": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData",
+  "output_dir": "G:\\RPi-Development\\EnvDataAnl\\OfficeENVData\\OffceAnalysisVer2\\output",
+  "devices": [
+    "P1",
+    "P2",
+    "P3"
+  ],
+  "rows": 535103,
+  "cols": [
+    "timestamp",
+    "device_id",
+    "temperature",
+    "absolute_humidity",
+    "co2",
+    "humidity",
+    "pressure",
+    "gas_resistance",
+    "date",
+    "hour",
+    "dow",
+    "week",
+    "month",
+    "is_daytime",
+    "is_night"
+  ],
+  "focus_metrics": [
+    "temperature",
+    "absolute_humidity",
+    "co2"
+  ],
+  "day_start": 6,
+  "p_high_pct": 0.9,
+  "overall_stats": {
+    "temperature": {
+      "count": 535103,
+      "mean": 29.997967269497646,
+      "std": 2.538898446933709,
+      "min": 21.87,
+      "max": 36.75207
+    },
+    "absolute_humidity": {
+      "count": 535103,
+      "mean": 13.901474949682585,
+      "std": 2.5064966684409278,
+      "min": 8.07,
+      "max": 19.96
+    },
+    "co2": {
+      "count": 535103,
+      "mean": 559.3207943143657,
+      "std": 181.1258219104471,
+      "min": 400.0,
+      "max": 2143.0
+    }
+  }
+}
