@@ -13,12 +13,13 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
     QLineEdit, QPushButton, QPlainTextEdit, QFileDialog, QLabel, QSpinBox,
-    QDoubleSpinBox, QGroupBox, QSplitter
+    QDoubleSpinBox, QGroupBox, QSplitter, QTabWidget
 )
 
 from core.config import SolverParams, make_diag_dir
 from core.solver_interface import run_dry_run, ProcessResult
 from gui.plots import new_canvas, plot_attempts, plot_topband_scatter
+from gui.search_tab import SearchTab
 
 
 class DryRunWorker(QtCore.QThread):
@@ -106,14 +107,22 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(QLabel("Log"))
         left_layout.addWidget(self.log_edit, 1)
 
-        # --- Right panel: Plots ---
+        # --- Right panel: Tabs (Diagnostics, Search) ---
+        tabs = QTabWidget()
+        # Diagnostics tab
+        diag_widget = QWidget(); diag_layout = QVBoxLayout(diag_widget)
         plots_row = QHBoxLayout()
         self.canvas_attempts = new_canvas()
         self.canvas_preview = new_canvas()
-        right_layout.addWidget(QLabel("Diagnostics"))
+        diag_layout.addWidget(QLabel("Diagnostics"))
         plots_row.addWidget(self.canvas_attempts, 1)
         plots_row.addWidget(self.canvas_preview, 1)
-        right_layout.addLayout(plots_row, 1)
+        diag_layout.addLayout(plots_row, 1)
+        tabs.addTab(diag_widget, "Diagnostics")
+        # Search tab (Ver2)
+        self.search_tab = SearchTab(self)
+        tabs.addTab(self.search_tab, "Search (Ver2)")
+        right_layout.addWidget(tabs, 1)
 
         # State
         self._last_diag_dir: Optional[str] = None
@@ -123,6 +132,28 @@ class MainWindow(QMainWindow):
         self.btn_dry.clicked.connect(self.on_dry_run)
         self.btn_pick_diag.clicked.connect(self.on_pick_diag_dir)
         self.btn_open_diag.clicked.connect(self.on_open_last_diag)
+        # Search tab interop
+        self.search_tab.btn_apply.clicked.connect(self.on_apply_from_search)
+
+    def on_apply_from_search(self):
+        try:
+            sel = self.search_tab.selected_params()
+            if not sel:
+                self.append_log("[Search] No row selected.")
+                return
+            if sel.get('tol_factor') is not None:
+                self.sb_tol_factor.setValue(float(sel['tol_factor']))
+            if sel.get('safety_growth') is not None:
+                self.sb_safety_growth.setValue(float(sel['safety_growth']))
+            if sel.get('D') is not None:
+                self.sb_D.setValue(float(sel['D']))
+            if sel.get('nx') is not None:
+                self.sb_nx.setValue(int(round(float(sel['nx']))))
+            if sel.get('ny') is not None:
+                self.sb_ny.setValue(int(round(float(sel['ny']))))
+            self.append_log("[Search] Applied selected parameters to Run panel.")
+        except Exception as e:
+            self.append_log(f"[Search] Apply failed: {e}")
 
     def params_from_ui(self) -> SolverParams:
         p = SolverParams(
